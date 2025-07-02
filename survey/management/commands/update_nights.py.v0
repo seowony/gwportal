@@ -1,0 +1,666 @@
+from django.core.management.base import BaseCommand, CommandError
+from django.utils import timezone
+from survey.models import Night
+import datetime
+import time
+import os
+import signal
+import sys
+import traceback
+
+class Command(BaseCommand):
+    help = 'Update Night records from filesystem observation directories with continuous monitoring'
+
+    def add_arguments(self, parser):
+        # Basic operation modes
+        parser.add_argument(
+            '--mode',
+            choices=['validate', 'test', 'incremental', 'full', 'status'],
+            default='incremental',
+            help='Operation mode: validate folder structure, test with limit, incremental update, full rebuild, or show status'
+        )
+        
+        # Continuous monitoring options (like populate_data.py)
+        parser.add_argument(
+            '--once',
+            action='store_true',
+            help='Run once instead of continuous monitoring'
+        )
+        
+        parser.add_argument(
+            '--interval',
+            type=int,
+            default=300,  # 5 minutes default
+            help='Check interval in seconds for monitoring mode (default: 300)'
+        )
+        
+        # Limiting options
+        parser.add_argument(
+            '--limit',
+            type=int,
+            help='Limit number of nights to process (useful for testing)'
+        )
+        
+        # Path options
+        parser.add_argument(
+            '--base-path',
+            default='/lyman/data1/obsdata',
+            help='Base path to observation data directories'
+        )
+        
+        # Validation options
+        parser.add_argument(
+            '--show-invalid',
+            action='store_true',
+            help='Show only invalid/problematic folders (use with --mode validate)'
+        )
+        
+        # Force options
+        parser.add_argument(
+            '--force-full-scan',
+            action='store_true',
+            help='Force full scan even in incremental mode'
+        )
+        
+        # Statistics update options
+        parser.add_argument(
+            '--update-stats',
+            action='store_true',
+            help='Update statistics for processed nights'
+        )
+        
+        parser.add_argument(
+            '--update-all-stats',
+            action='store_true',
+            help='Update statistics for ALL nights (time consuming)'
+        )
+        
+        # Data management options (like populate_data.py)
+        parser.add_argument(
+            '--flush',
+            action='store_true',
+            help='Delete all existing Night data before processing'
+        )
+        
+        parser.add_argument(
+            '--flush-only',
+            action='store_true',
+            help='Only delete all existing Night data without processing'
+        )
+        
+        # Smart monitoring options
+        parser.add_argument(
+            '--smart-interval',
+            action='store_true',
+            help='Use smart interval adjustment based on activity'
+        )
+        
+        parser.add_argument(
+            '--min-interval',
+            type=int,
+            default=60,
+            help='Minimum interval for smart mode (default: 60s)'
+        )
+        
+        parser.add_argument(
+            '--max-interval',
+            type=int,
+            default=1800,  # 30 minutes
+            help='Maximum interval for smart mode (default: 1800s)'
+        )
+
+    def handle(self, *args, **options):
+        base_path = options['base_path']
+        run_once = options['once']
+        interval = options['interval']
+        flush = options['flush']
+        flush_only = options['flush_only']
+        mode = options['mode']
+        
+        # Handle flush-only mode
+        if flush_only:
+            self.stdout.write(self.style.WARNING('Performing Night database flush only...'))
+            self._flush_nights()
+            self.stdout.write(self.style.SUCCESS('Night database flush completed! No data was processed.'))
+            return
+        
+        # Check if base path exists
+        if not os.path.exists(base_path):
+            self.stdout.write(self.style.ERROR(f"Base path not found: {base_path}"))
+            return
+        
+        # Execute data flush if requested
+        if flush:
+            self._flush_nights()
+        
+        try:
+            if run_once:
+                # Single execution mode
+                self.stdout.write(self.style.SUCCESS(f'Starting one-time Night update ({mode} mode)...'))
+                self._process_nights(base_path, options)
+                self.stdout.write(self.style.SUCCESS('Night update complete!'))
+                return
+            
+            # Continuous monitoring mode
+            self.stdout.write(self.style.SUCCESS(f'🌙 Monitoring observation directories: {base_path}'))
+            self.stdout.write(self.style.SUCCESS(f'📊 Mode: {mode}'))
+            self.stdout.write(self.style.SUCCESS(f'⏱️  Check interval: {interval} seconds'))
+            
+            if options['smart_interval']:
+                self.stdout.write(self.style.SUCCESS(f'🧠 Smart interval: {options["min_interval"]}-{options["max_interval"]}s'))
+            
+            # Initialize monitoring state
+            last_check_time = None
+            last_modification_time = None
+            consecutive_no_changes = 0
+            current_interval = interval
+            
+            # Setup signal handlers for graceful shutdown
+            def signal_handler(sig, frame):
+                self.stdout.write(self.style.WARNING('\n🛑 Stopping Night monitoring...'))
+                sys.exit(0)
+            
+            signal.signal(signal.SIGINT, signal_handler)
+            signal.signal(signal.SIGTERM, signal_handler)
+            
+            while True:
+                try:
+                    cycle_start = time.time()
+                    
+                    # Check for changes in the observation directory
+                    current_mod_time = self._get_directory_modification_time(base_path)
+                    
+                    should_process = False
+                    change_detected = False
+                    
+                    if last_modification_time is None:
+                        # First run
+                        should_process = True
+                        self.stdout.write("🔄 First monitoring cycle - processing...")
+                    elif current_mod_time > last_modification_time:
+                        # Changes detected
+                        should_process = True
+                        change_detected = True
+                        consecutive_no_changes = 0
+                        self.stdout.write(f"📂 Directory changes detected (modified: {datetime.datetime.fromtimestamp(current_mod_time)})")
+                    else:
+                        # No changes
+                        consecutive_no_changes += 1
+                        if consecutive_no_changes % 10 == 0:  # Status every 10 cycles
+                            self.stdout.write(f"✅ No changes detected ({consecutive_no_changes} cycles)")
+                    
+                    # Process if needed
+                    if should_process:
+                        try:
+                            result = self._process_nights(base_path, options)
+                            
+                            # Report results
+                            if result:
+                                total_processed = result.get('created', 0) + result.get('updated', 0)
+                                if total_processed > 0:
+                                    self.stdout.write(
+                                        self.style.SUCCESS(
+                                            f"📊 Processed: +{result.get('created', 0)} new, "
+                                            f"~{result.get('updated', 0)} updated, "
+                                            f"={result.get('skipped', 0)} skipped"
+                                        )
+                                    )
+                                else:
+                                    self.stdout.write("✅ No new nights to process")
+                            
+                            last_modification_time = current_mod_time
+                            
+                        except Exception as e:
+                            self.stdout.write(self.style.ERROR(f"Processing error: {e}"))
+                            self.stdout.write(traceback.format_exc())
+                    
+                    # Smart interval adjustment
+                    if options['smart_interval']:
+                        current_interval = self._calculate_smart_interval(
+                            change_detected, consecutive_no_changes, 
+                            options['min_interval'], options['max_interval'], interval
+                        )
+                        if current_interval != interval:
+                            self.stdout.write(f"🧠 Adjusted interval to {current_interval}s")
+                    else:
+                        current_interval = interval
+                    
+                    # Calculate sleep time
+                    cycle_time = time.time() - cycle_start
+                    sleep_time = max(0, current_interval - cycle_time)
+                    
+                    if sleep_time > 0:
+                        time.sleep(sleep_time)
+                    
+                except KeyboardInterrupt:
+                    break
+                except Exception as e:
+                    self.stdout.write(self.style.ERROR(f'Monitoring error: {e}'))
+                    self.stdout.write(traceback.format_exc())
+                    # Wait a bit before retrying
+                    time.sleep(min(60, current_interval))
+                    
+        except KeyboardInterrupt:
+            self.stdout.write(self.style.WARNING('🛑 Night monitoring stopped by user'))
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f'Fatal error: {e}'))
+            self.stdout.write(traceback.format_exc())
+
+    def _flush_nights(self):
+        """Delete all Night records from the database"""
+        self.stdout.write(self.style.WARNING('Flushing all Night records...'))
+        
+        try:
+            # Get counts before deletion
+            total_nights = Night.objects.count()
+            
+            if total_nights == 0:
+                self.stdout.write(self.style.SUCCESS('No Night records to delete.'))
+                return
+            
+            # Delete all Night records (CASCADE will handle related data)
+            deleted_count, _ = Night.objects.all().delete()
+            
+            self.stdout.write(self.style.SUCCESS(f'Deleted {deleted_count} Night records.'))
+            
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f'Error during Night database flush: {e}'))
+            raise
+
+    def _get_directory_modification_time(self, base_path):
+        """Get the latest modification time in the observation directory"""
+        try:
+            latest_mod_time = os.path.getmtime(base_path)
+            
+            # Check subdirectories for recent changes (last 7 days only for performance)
+            cutoff_time = time.time() - (7 * 24 * 3600)  # 7 days ago
+            
+            for entry in os.listdir(base_path):
+                entry_path = os.path.join(base_path, entry)
+                if os.path.isdir(entry_path):
+                    try:
+                        mod_time = os.path.getmtime(entry_path)
+                        if mod_time > cutoff_time:  # Only check recent directories
+                            latest_mod_time = max(latest_mod_time, mod_time)
+                    except (OSError, IOError):
+                        continue  # Skip directories we can't access
+            
+            return latest_mod_time
+            
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f"Error checking directory modification time: {e}"))
+            return time.time()  # Return current time as fallback
+
+    def _calculate_smart_interval(self, change_detected, consecutive_no_changes, min_interval, max_interval, base_interval):
+        """Calculate smart interval based on activity"""
+        if change_detected:
+            # Recent activity - use minimum interval
+            return min_interval
+        elif consecutive_no_changes < 5:
+            # Some recent activity - use base interval
+            return base_interval
+        elif consecutive_no_changes < 20:
+            # Moderate inactivity - increase interval slightly
+            return min(base_interval * 2, max_interval)
+        else:
+            # Long inactivity - use maximum interval
+            return max_interval
+
+    def _process_nights(self, base_path, options):
+        """Process nights based on the specified mode"""
+        mode = options['mode']
+        
+        try:
+            if mode == 'validate':
+                return self.handle_validate(base_path, options['show_invalid'])
+            elif mode == 'test':
+                return self.handle_test(base_path, options['limit'] or 5)
+            elif mode == 'incremental':
+                return self.handle_incremental(base_path, options)
+            elif mode == 'full':
+                return self.handle_full_rebuild(base_path, options['limit'])
+            elif mode == 'status':
+                return self.handle_status()
+            
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f"Error in {mode} mode: {e}"))
+            raise
+
+    def handle_validate(self, base_path, show_invalid_only):
+        """Validate folder structure without creating Night records"""
+        self.stdout.write("🔍 Validating observation folder structure...")
+        
+        try:
+            # Check if Night model has the validation methods
+            if hasattr(Night, 'show_invalid_folders') and show_invalid_only:
+                self.stdout.write("📋 Showing only problematic folders:")
+                results = Night.show_invalid_folders(base_path)
+            elif hasattr(Night, 'validate_folder_structure'):
+                self.stdout.write("📊 Full validation report:")
+                results = Night.validate_folder_structure(base_path)
+            else:
+                # Fallback validation
+                self.stdout.write("🔍 Basic folder validation:")
+                results = self._basic_folder_validation(base_path)
+            
+            # Summary
+            if isinstance(results, dict) and 'statistics' in results:
+                stats = results['statistics']
+                total = stats['total_folders']
+                valid = stats['valid']
+                
+                if total > 0:
+                    compliance_rate = (valid / total) * 100
+                    
+                    if compliance_rate >= 90:
+                        self.stdout.write(
+                            self.style.SUCCESS(f"✅ High compliance: {compliance_rate:.1f}% ({valid}/{total})")
+                        )
+                    elif compliance_rate >= 70:
+                        self.stdout.write(
+                            self.style.WARNING(f"⚠️ Moderate compliance: {compliance_rate:.1f}% ({valid}/{total})")
+                        )
+                    else:
+                        self.stdout.write(
+                            self.style.ERROR(f"❌ Low compliance: {compliance_rate:.1f}% ({valid}/{total})")
+                        )
+                    
+                    return {'validated': total, 'valid': valid, 'invalid': total - valid}
+                else:
+                    self.stdout.write(self.style.ERROR("❌ No folders found to validate"))
+                    return {'validated': 0, 'valid': 0, 'invalid': 0}
+            else:
+                return results
+                
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f"Validation failed: {e}"))
+            raise
+
+    def _basic_folder_validation(self, base_path):
+        """Basic folder validation when Night model methods are not available"""
+        total_folders = 0
+        valid_folders = 0
+        
+        try:
+            for entry in os.listdir(base_path):
+                entry_path = os.path.join(base_path, entry)
+                if os.path.isdir(entry_path):
+                    total_folders += 1
+                    # Basic date format validation
+                    if self._is_valid_date_directory(entry):
+                        valid_folders += 1
+                    else:
+                        self.stdout.write(f"Invalid directory format: {entry}")
+            
+            return {
+                'statistics': {
+                    'total_folders': total_folders,
+                    'valid': valid_folders,
+                    'invalid': total_folders - valid_folders
+                }
+            }
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f"Error during basic validation: {e}"))
+            return {'statistics': {'total_folders': 0, 'valid': 0, 'invalid': 0}}
+
+    def handle_test(self, base_path, limit):
+        """Test creation with limited number of nights"""
+        self.stdout.write(f"🧪 Test mode: Creating up to {limit} Night records...")
+        
+        try:
+            # Check available methods and use appropriate one
+            if hasattr(Night, 'find_nights_from_folders'):
+                result = Night.find_nights_from_folders(
+                    base_path=base_path,
+                    incremental=False,
+                    force_full_scan=True,
+                    limit=limit
+                )
+            elif hasattr(Night, 'bulk_initialize_from_filesystem'):
+                result = Night.bulk_initialize_from_filesystem(
+                    base_path=base_path,
+                    limit=limit
+                )
+            else:
+                # Manual test processing
+                result = self._manual_test_processing(base_path, limit)
+            
+            self.stdout.write("📊 Test Results:")
+            self.stdout.write(f"  Created: {result.get('created', 0)} nights")
+            self.stdout.write(f"  Updated: {result.get('updated', 0)} nights")
+            self.stdout.write(f"  Skipped: {result.get('skipped', 0)} nights")
+            
+            return result
+            
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f"Test mode error: {e}"))
+            return {'created': 0, 'updated': 0, 'skipped': 0}
+
+    def handle_incremental(self, base_path, options):
+        """Incremental update of Night records"""
+        force_full_scan = options['force_full_scan']
+        limit = options['limit']
+        
+        try:
+            # Use the actual method signature from Night model
+            if hasattr(Night, 'find_nights_from_folders'):
+                # Try with common parameters
+                kwargs = {
+                    'base_path': base_path,
+                    'incremental': not force_full_scan,
+                }
+                
+                # Add optional parameters if they exist
+                if limit:
+                    kwargs['limit'] = limit
+                
+                result = Night.find_nights_from_folders(**kwargs)
+                
+            elif hasattr(Night, 'bulk_initialize_from_filesystem'):
+                result = Night.bulk_initialize_from_filesystem(
+                    base_path=base_path,
+                    limit=limit
+                )
+            else:
+                # Manual incremental processing
+                result = self._manual_incremental_processing(base_path, options)
+            
+            # Update statistics if requested
+            if options['update_stats']:
+                self.update_night_statistics()
+            
+            if options['update_all_stats']:
+                self.update_all_night_statistics()
+            
+            return result
+            
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f"Incremental mode error: {e}"))
+            return {'created': 0, 'updated': 0, 'skipped': 0}
+
+    def handle_full_rebuild(self, base_path, limit):
+        """Full rebuild of all Night records"""
+        try:
+            if hasattr(Night, 'bulk_initialize_from_filesystem'):
+                result = Night.bulk_initialize_from_filesystem(
+                    base_path=base_path,
+                    limit=limit
+                )
+            elif hasattr(Night, 'find_nights_from_folders'):
+                kwargs = {
+                    'base_path': base_path,
+                    'incremental': False,
+                }
+                if limit:
+                    kwargs['limit'] = limit
+                    
+                result = Night.find_nights_from_folders(**kwargs)
+            else:
+                # Manual full processing
+                result = self._manual_full_processing(base_path, limit)
+            
+            self.stdout.write("📊 Full Rebuild Results:")
+            self.stdout.write(f"  Created: {result.get('created', 0)} new nights")
+            self.stdout.write(f"  Updated: {result.get('updated', 0)} existing nights")
+            self.stdout.write(f"  Total: {result.get('total', 0)} nights")
+            
+            return result
+            
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f"Full rebuild error: {e}"))
+            return {'created': 0, 'updated': 0, 'total': 0}
+
+    def handle_status(self):
+        """Show current status of Night records"""
+        self.stdout.write("📊 Current Night Database Status:")
+        
+        try:
+            # Use the built-in status report if available
+            if hasattr(Night, 'status_report'):
+                Night.status_report()
+            
+            # Additional statistics
+            total_nights = Night.objects.count()
+            
+            if total_nights > 0:
+                # Scanning status
+                scanned_count = Night.objects.filter(files_scanned=True).count() if hasattr(Night.objects.first(), 'files_scanned') else 0
+                not_scanned = total_nights - scanned_count
+                
+                self.stdout.write(f"\n📁 File Scanning Status:")
+                self.stdout.write(f"  Total nights: {total_nights}")
+                self.stdout.write(f"  Scanned: {scanned_count} nights")
+                self.stdout.write(f"  Not scanned: {not_scanned} nights")
+                
+                if scanned_count > 0:
+                    scan_percentage = (scanned_count / total_nights) * 100
+                    self.stdout.write(f"  Scan completion: {scan_percentage:.1f}%")
+            else:
+                self.stdout.write("📋 No Night records in database")
+            
+            return {'total_nights': total_nights, 'scanned': scanned_count if total_nights > 0 else 0}
+            
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f"Status check error: {e}"))
+            return {'total_nights': 0, 'scanned': 0}
+
+    def update_night_statistics(self, max_age_days=7):
+        """Update statistics for recently processed nights"""
+        self.stdout.write(f"\n📈 Updating night statistics (last {max_age_days} days)...")
+        
+        try:
+            # Update statistics for recent nights
+            cutoff_date = timezone.now().date() - datetime.timedelta(days=max_age_days)
+            recent_nights = Night.objects.filter(updated_at__date__gte=cutoff_date)
+            
+            updated_count = 0
+            for night in recent_nights:
+                try:
+                    if hasattr(night, 'update_statistics'):
+                        night.update_statistics()
+                        updated_count += 1
+                except Exception as e:
+                    self.stdout.write(f"Warning: Failed to update stats for {night.date}: {e}")
+            
+            self.stdout.write(f"✅ Updated statistics for {updated_count} nights")
+            return updated_count
+           
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f"Statistics update error: {e}"))
+            return 0
+
+    def update_all_night_statistics(self):
+        """Update statistics for ALL nights"""
+        self.stdout.write("\n📊 Updating ALL night statistics (this may take a while)...")
+        
+        try:
+            if hasattr(Night, 'update_all_statistics'):
+                updated_count = Night.update_all_statistics()
+                self.stdout.write(f"✅ Updated statistics for {updated_count} nights")
+                return updated_count
+            else:
+                # Manual update for all nights
+                updated_count = 0
+                for night in Night.objects.all():
+                    try:
+                        if hasattr(night, 'update_statistics'):
+                            night.update_statistics()
+                            updated_count += 1
+                    except Exception as e:
+                        self.stdout.write(f"Warning: Failed to update stats for {night.date}: {e}")
+                
+                self.stdout.write(f"✅ Updated statistics for {updated_count} nights")
+                return updated_count
+                
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f"Full statistics update failed: {e}"))
+            return 0
+
+    def _manual_test_processing(self, base_path, limit):
+        """Manual test processing when Night methods are not available"""
+        created = 0
+        updated = 0
+        skipped = 0
+        
+        try:
+            directories = []
+            for entry in os.listdir(base_path):
+                entry_path = os.path.join(base_path, entry)
+                if os.path.isdir(entry_path) and self._is_valid_date_directory(entry):
+                    directories.append(entry)
+            
+            directories = sorted(directories)[:limit]
+            
+            for dir_name in directories:
+                try:
+                    date_obj = self._parse_directory_date(dir_name)
+                    night, created_flag = Night.objects.get_or_create(
+                        date=date_obj,
+                        defaults={'directory_name': dir_name}
+                    )
+                    
+                    if created_flag:
+                        created += 1
+                    else:
+                        updated += 1
+                        
+                except Exception as e:
+                    self.stdout.write(f"Warning: Failed to process {dir_name}: {e}")
+                    skipped += 1
+            
+            return {'created': created, 'updated': updated, 'skipped': skipped}
+            
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f"Manual test processing error: {e}"))
+            return {'created': 0, 'updated': 0, 'skipped': 0}
+
+    def _manual_incremental_processing(self, base_path, options):
+        """Manual incremental processing"""
+        return self._manual_test_processing(base_path, options.get('limit', 100))
+
+    def _manual_full_processing(self, base_path, limit):
+        """Manual full processing"""
+        return self._manual_test_processing(base_path, limit or 1000)
+
+    def _is_valid_date_directory(self, directory_name):
+        """Check if directory name represents a valid observation date"""
+        try:
+            # Try various date formats
+            for fmt in ['%Y%m%d', '%Y-%m-%d', '%y%m%d']:
+                try:
+                    datetime.datetime.strptime(directory_name, fmt)
+                    return True
+                except ValueError:
+                    continue
+            return False
+        except:
+            return False
+
+    def _parse_directory_date(self, directory_name):
+        """Parse date from directory name"""
+        for fmt in ['%Y%m%d', '%Y-%m-%d', '%y%m%d']:
+            try:
+                return datetime.datetime.strptime(directory_name, fmt).date()
+            except ValueError:
+                continue
+        raise ValueError(f"Cannot parse date from directory: {directory_name}")

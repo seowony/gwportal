@@ -1,0 +1,5142 @@
+{
+  "pending_folders": {
+    "/lyman/data1/obsdata/7DT01/2023-10-30": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-30",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-02-29": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-29",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-02-04": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-04",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-01-09": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-09",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-12-30": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-30",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-11-12": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-12",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-11-04": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-04",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-10-12": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-12",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-00-01": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-00-01",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-01-21": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-21",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-01-04": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-04",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-01-11": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-11",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-11-27": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-27",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-01-23": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-23",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-02-09": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-09",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-12-14": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-14",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-12-19": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-19",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-11-02": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-02",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-02-12": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-12",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-11-30": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-30",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-02-07": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-07",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-12-07": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-07",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-11-24": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-24",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-01-24": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-24",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-01-17": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-17",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-12-03": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-03",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-12-04": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-04",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-11-17": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-17",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-12-20": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-20",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-02-03": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-03",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-10-28": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-28",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-10-09": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-09",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-11-19": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-19",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-12-05": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-05",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-10-31": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-31",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-12-09": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-09",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-01-16": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-16",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-10-15": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-15",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-01-25": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-25",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-02-14": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-14",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-00-02": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-00-02",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-01-13": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-13",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-10-11": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-11",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-01-19": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-19",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-02-18": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-18",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-10-16": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-16",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-02-19": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-19",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-12-26": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-26",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-12-15": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-15",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-01-29": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-29",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-12-31": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-31",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-11-06": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-06",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-12-16": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-16",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-01-01": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-01",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-11-23": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-23",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-02-15": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-15",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-11-11": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-11",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-02-28": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-28",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-01-03": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-03",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-01-07": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-07",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-02-26": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-26",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-01-02": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-02",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-12-29": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-29",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-02-08": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-08",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-12-06": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-06",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-12-21": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-21",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-00-00": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-00-00",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-11-10": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-10",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-11-25": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-25",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-01-06": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-06",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-10-27": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-27",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-12-10": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-10",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-12-22": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-22",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-11-05": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-05",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-11-15": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-15",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-10-26": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-26",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-11-08": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-08",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-12-23": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-23",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-02-10": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-10",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-01-27": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-27",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-11-29": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-29",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-11-14": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-14",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-10-24": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-24",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-11-21": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-21",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-11-28": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-28",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-02-05": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-05",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-01-26": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-26",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-11-03": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-03",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-11-07": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-07",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-12-11": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-11",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-01-30": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-30",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-01-28": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-28",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-10-23": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-23",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-01-12": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-12",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-02-01": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-01",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-02-17": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-17",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-11-26": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-26",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-01-15": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-15",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-11-18": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-18",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-12-24": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-24",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-02-02": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-02",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-01-10": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-10",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-12-18": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-18",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-10-25": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-25",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-01-05": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-05",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-10-14": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-14",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-11-13": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-13",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-12-17": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-17",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-02-13": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-13",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-12-02": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-02",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-12-12": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-12",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-11-20": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-20",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-10-13": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-13",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-01-14": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-14",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-01-22": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-22",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-10-10": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-10",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-02-06": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-06",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-00-03": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-00-03",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-11-16": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-16",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-01-18": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-18",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-02-20": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-20",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-12-01": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-01",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-11-22": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-22",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-02-16": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-16",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-10-19": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-19",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-02-11": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-11",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-10-20": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-20",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-03-05": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-03-05",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-01-08": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-08",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-11-01": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-01",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-02-22": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-22",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-03-10": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-03-10",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-03-06": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-03-06",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2024-01-31": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-31",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-10-17": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-17",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT01/2023-12-08": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-08",
+      "telescope": "7DT01"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-10-30": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-30",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-02-29": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-29",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-02-04": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-04",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-01-09": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-09",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-12-30": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-30",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-11-12": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-12",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-11-04": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-04",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-01-21": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-21",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-01-04": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-04",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-01-11": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-11",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-11-27": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-27",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-01-23": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-23",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-02-09": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-09",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-12-14": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-14",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-12-19": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-19",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-11-02": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-02",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-02-12": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-12",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-11-30": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-30",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-02-07": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-07",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-12-07": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-07",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-01-24": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-24",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-01-17": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-17",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-12-03": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-03",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-12-04": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-04",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-11-17": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-17",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-12-20": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-20",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-02-03": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-03",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-10-28": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-28",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-11-19": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-19",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-12-05": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-05",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-10-31": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-31",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-12-09": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-09",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-01-16": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-16",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-01-25": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-25",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-02-14": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-14",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-01-13": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-13",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-02-18": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-18",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-02-19": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-19",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-12-15": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-15",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-01-29": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-29",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-12-31": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-31",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-11-06": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-06",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-12-16": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-16",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-01-01": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-01",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-11-23": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-23",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-02-15": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-15",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-11-11": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-11",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-02-28": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-28",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-01-03": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-03",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-02-26": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-26",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-01-02": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-02",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-12-29": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-29",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-02-08": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-08",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-12-06": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-06",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-12-21": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-21",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-11-10": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-10",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-01-06": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-06",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-10-27": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-27",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-12-10": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-10",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-12-22": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-22",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-11-05": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-05",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-11-15": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-15",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-10-26": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-26",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-11-08": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-08",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-12-23": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-23",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-02-10": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-10",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-01-27": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-27",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-11-29": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-29",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-11-14": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-14",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-10-24": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-24",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-11-21": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-21",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-11-28": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-28",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-02-05": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-05",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-01-26": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-26",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-11-03": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-03",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-11-07": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-07",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-01-30": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-30",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-01-28": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-28",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-10-23": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-23",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-01-12": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-12",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-02-01": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-01",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-02-17": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-17",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-01-15": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-15",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-11-18": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-18",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-12-24": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-24",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-02-02": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-02",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-10-18": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-18",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-01-10": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-10",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-12-18": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-18",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-10-25": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-25",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-11-13": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-13",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-12-17": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-17",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-02-13": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-13",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-12-02": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-02",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-11-20": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-20",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-01-14": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-14",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-01-22": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-22",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-02-06": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-06",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-11-16": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-16",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-01-18": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-18",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-02-20": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-20",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-12-01": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-01",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-11-22": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-22",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-02-16": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-16",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-02-11": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-11",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-03-05": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-03-05",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-01-08": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-08",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-11-01": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-01",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-02-22": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-22",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-03-10": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-03-10",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-03-06": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-03-06",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2024-01-31": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-31",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT07/2023-12-08": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-08",
+      "telescope": "7DT07"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-02-29": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-29",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-02-04": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-04",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2023-12-30": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-30",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-01-21": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-21",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-01-04": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-04",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-01-11": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-11",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2023-11-27": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-27",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-01-23": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-23",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-02-09": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-09",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2023-12-14": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-14",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2023-12-19": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-19",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-02-12": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-12",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2023-11-30": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-30",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-02-07": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-07",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2023-12-07": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-07",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-01-24": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-24",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-01-17": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-17",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2023-12-03": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-03",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2023-12-04": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-04",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2023-12-20": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-20",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-02-03": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-03",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2023-12-05": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-05",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2023-12-09": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-09",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-01-16": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-16",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-01-25": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-25",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-02-14": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-14",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-01-13": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-13",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-02-18": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-18",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-02-19": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-19",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2023-12-26": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-26",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-01-29": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-29",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2023-12-31": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-31",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-01-01": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-01",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-02-15": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-15",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-02-28": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-28",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-01-03": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-03",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-02-26": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-26",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-01-02": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-02",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2023-12-29": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-29",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-02-08": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-08",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2023-12-06": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-06",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2023-12-21": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-21",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2023-12-10": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-10",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2023-12-22": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-22",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2023-12-23": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-23",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-02-10": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-10",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-01-27": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-27",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2023-11-29": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-29",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2023-11-28": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-28",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-02-05": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-05",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-01-26": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-26",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2023-12-11": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-11",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-01-30": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-30",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-01-28": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-28",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-01-12": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-12",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-02-01": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-01",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-02-17": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-17",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2023-11-26": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-26",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-01-15": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-15",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2023-12-24": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-24",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-02-02": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-02",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-01-05": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-05",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-02-13": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-13",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2023-12-02": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-02",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2023-12-12": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-12",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-01-14": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-14",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-01-22": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-22",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-02-06": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-06",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-02-20": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-20",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2023-12-01": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-01",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-02-16": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-16",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-02-11": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-11",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-03-05": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-03-05",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-02-22": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-22",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-03-10": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-03-10",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-03-06": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-03-06",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2024-01-31": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-31",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT09/2023-12-08": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-08",
+      "telescope": "7DT09"
+    },
+    "/lyman/data1/obsdata/7DT10/2024-02-29": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-29",
+      "telescope": "7DT10"
+    },
+    "/lyman/data1/obsdata/7DT10/2024-02-04": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-04",
+      "telescope": "7DT10"
+    },
+    "/lyman/data1/obsdata/7DT10/2024-02-09": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-09",
+      "telescope": "7DT10"
+    },
+    "/lyman/data1/obsdata/7DT10/2024-02-12": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-12",
+      "telescope": "7DT10"
+    },
+    "/lyman/data1/obsdata/7DT10/2024-02-07": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-07",
+      "telescope": "7DT10"
+    },
+    "/lyman/data1/obsdata/7DT10/2024-02-03": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-03",
+      "telescope": "7DT10"
+    },
+    "/lyman/data1/obsdata/7DT10/2024-02-14": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-14",
+      "telescope": "7DT10"
+    },
+    "/lyman/data1/obsdata/7DT10/2024-02-18": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-18",
+      "telescope": "7DT10"
+    },
+    "/lyman/data1/obsdata/7DT10/2024-02-19": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-19",
+      "telescope": "7DT10"
+    },
+    "/lyman/data1/obsdata/7DT10/2024-01-29": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-29",
+      "telescope": "7DT10"
+    },
+    "/lyman/data1/obsdata/7DT10/2024-02-15": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-15",
+      "telescope": "7DT10"
+    },
+    "/lyman/data1/obsdata/7DT10/2024-02-28": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-28",
+      "telescope": "7DT10"
+    },
+    "/lyman/data1/obsdata/7DT10/2024-02-26": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-26",
+      "telescope": "7DT10"
+    },
+    "/lyman/data1/obsdata/7DT10/2024-02-08": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-08",
+      "telescope": "7DT10"
+    },
+    "/lyman/data1/obsdata/7DT10/2024-02-10": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-10",
+      "telescope": "7DT10"
+    },
+    "/lyman/data1/obsdata/7DT10/2024-02-05": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-05",
+      "telescope": "7DT10"
+    },
+    "/lyman/data1/obsdata/7DT10/2024-01-30": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-30",
+      "telescope": "7DT10"
+    },
+    "/lyman/data1/obsdata/7DT10/2024-01-28": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-28",
+      "telescope": "7DT10"
+    },
+    "/lyman/data1/obsdata/7DT10/2024-02-01": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-01",
+      "telescope": "7DT10"
+    },
+    "/lyman/data1/obsdata/7DT10/2024-02-17": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-17",
+      "telescope": "7DT10"
+    },
+    "/lyman/data1/obsdata/7DT10/2024-02-02": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-02",
+      "telescope": "7DT10"
+    },
+    "/lyman/data1/obsdata/7DT10/2024-02-13": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-13",
+      "telescope": "7DT10"
+    },
+    "/lyman/data1/obsdata/7DT10/2024-02-06": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-06",
+      "telescope": "7DT10"
+    },
+    "/lyman/data1/obsdata/7DT10/2024-02-20": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-20",
+      "telescope": "7DT10"
+    },
+    "/lyman/data1/obsdata/7DT10/2024-02-16": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-16",
+      "telescope": "7DT10"
+    },
+    "/lyman/data1/obsdata/7DT10/2024-02-11": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-11",
+      "telescope": "7DT10"
+    },
+    "/lyman/data1/obsdata/7DT10/2024-03-05": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-03-05",
+      "telescope": "7DT10"
+    },
+    "/lyman/data1/obsdata/7DT10/2024-02-22": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-22",
+      "telescope": "7DT10"
+    },
+    "/lyman/data1/obsdata/7DT10/2024-03-10": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-03-10",
+      "telescope": "7DT10"
+    },
+    "/lyman/data1/obsdata/7DT10/2024-03-06": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-03-06",
+      "telescope": "7DT10"
+    },
+    "/lyman/data1/obsdata/7DT10/2024-01-31": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-31",
+      "telescope": "7DT10"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-10-30": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-30",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-02-29": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-29",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-02-04": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-04",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-11-12": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-12",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-11-04": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-04",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-01-21": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-21",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-01-11": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-11",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-11-27": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-27",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-01-23": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-23",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-02-09": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-09",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-12-14": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-14",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-11-02": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-02",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-02-12": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-12",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-11-30": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-30",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-02-07": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-07",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-12-07": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-07",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-11-24": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-24",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-01-24": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-24",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-01-17": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-17",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-12-03": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-03",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-12-04": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-04",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-11-17": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-17",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-02-03": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-03",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-10-28": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-28",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-11-19": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-19",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-12-05": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-05",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-10-31": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-31",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-12-09": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-09",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-01-25": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-25",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-02-14": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-14",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-01-13": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-13",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-01-19": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-19",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-02-18": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-18",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-02-19": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-19",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-12-15": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-15",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-01-29": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-29",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-11-06": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-06",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-12-16": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-16",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-11-23": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-23",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-02-15": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-15",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-11-11": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-11",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-10-22": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-22",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-02-28": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-28",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-02-26": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-26",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-02-08": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-08",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-12-06": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-06",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-11-10": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-10",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-11-25": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-25",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-10-27": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-27",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-12-10": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-10",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-11-05": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-05",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-11-15": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-15",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-10-26": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-26",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-11-08": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-08",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-02-10": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-10",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-01-27": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-27",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-11-29": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-29",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-11-14": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-14",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-10-24": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-24",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-11-21": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-21",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-11-28": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-28",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-02-05": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-05",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-01-26": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-26",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-11-03": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-03",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-11-07": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-07",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-12-11": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-11",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-01-30": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-30",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-01-28": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-28",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-10-23": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-23",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-01-12": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-12",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-02-01": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-01",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-02-17": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-17",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-11-26": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-26",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-11-18": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-18",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-02-02": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-02",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-10-18": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-18",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-10-25": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-25",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-11-13": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-13",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-12-17": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-17",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-02-13": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-13",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-12-02": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-02",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-12-12": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-12",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-11-20": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-20",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-01-14": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-14",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-01-22": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-22",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-02-06": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-06",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-11-16": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-16",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-01-18": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-18",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-02-20": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-20",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-12-01": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-01",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-11-22": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-22",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-02-16": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-16",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-10-19": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-19",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-02-11": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-11",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-10-20": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-20",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-03-05": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-03-05",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-11-01": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-01",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-02-22": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-22",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-03-10": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-03-10",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-03-06": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-03-06",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2024-01-31": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-31",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT05/2023-12-08": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-08",
+      "telescope": "7DT05"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-10-30": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-30",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-02-29": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-29",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-02-04": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-04",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-01-09": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-09",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-12-30": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-30",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-11-12": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-12",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-11-04": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-04",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-01-21": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-21",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-01-04": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-04",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-01-11": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-11",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-01-23": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-23",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-02-09": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-09",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-12-14": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-14",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-12-19": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-19",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-11-02": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-02",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-02-12": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-12",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-11-30": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-30",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-02-07": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-07",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-12-07": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-07",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-11-24": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-24",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-01-24": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-24",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-01-17": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-17",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-12-03": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-03",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-12-04": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-04",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-11-17": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-17",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-12-20": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-20",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-02-03": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-03",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-10-28": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-28",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-11-19": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-19",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-12-05": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-05",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-10-31": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-31",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-12-09": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-09",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-01-16": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-16",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-01-25": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-25",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-02-14": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-14",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-01-13": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-13",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-02-18": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-18",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-02-19": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-19",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-12-26": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-26",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-12-15": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-15",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-01-29": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-29",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-12-31": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-31",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-11-06": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-06",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-12-16": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-16",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-01-01": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-01",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-11-23": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-23",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-02-15": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-15",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-11-11": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-11",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-02-28": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-28",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-01-03": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-03",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-01-07": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-07",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-02-26": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-26",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-01-02": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-02",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-12-29": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-29",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-02-08": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-08",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-12-06": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-06",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-12-21": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-21",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-11-10": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-10",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-11-25": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-25",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-01-06": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-06",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-10-27": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-27",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-12-10": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-10",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-12-22": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-22",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-11-05": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-05",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-11-15": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-15",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-10-26": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-26",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-11-08": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-08",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-12-23": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-23",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-02-10": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-10",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-01-27": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-27",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-11-29": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-29",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-11-14": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-14",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-10-24": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-24",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-11-21": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-21",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-02-05": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-05",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-01-26": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-26",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-11-03": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-03",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-11-07": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-07",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-12-11": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-11",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-01-30": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-30",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-01-28": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-28",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-10-23": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-23",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-01-12": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-12",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-02-01": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-01",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-02-17": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-17",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-01-15": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-15",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-11-18": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-18",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-12-24": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-24",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-02-02": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-02",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-10-18": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-18",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-01-10": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-10",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-12-18": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-18",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-10-25": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-25",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-01-05": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-05",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-11-13": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-13",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-12-17": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-17",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-02-13": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-13",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-12-02": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-02",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-12-12": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-12",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-11-20": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-20",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-01-14": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-14",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-01-22": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-22",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-02-06": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-06",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-11-16": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-16",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-01-18": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-18",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-02-20": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-20",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-12-01": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-01",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-11-22": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-22",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-02-16": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-16",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-10-19": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-19",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-02-11": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-11",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-10-20": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-20",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-03-05": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-03-05",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-01-08": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-08",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-11-01": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-01",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-02-22": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-22",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-03-10": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-03-10",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-03-06": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-03-06",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2024-01-31": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-31",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT06/2023-12-08": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-08",
+      "telescope": "7DT06"
+    },
+    "/lyman/data1/obsdata/7DT11/2024-02-29": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-29",
+      "telescope": "7DT11"
+    },
+    "/lyman/data1/obsdata/7DT11/2024-02-28": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-28",
+      "telescope": "7DT11"
+    },
+    "/lyman/data1/obsdata/7DT11/2024-02-26": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-26",
+      "telescope": "7DT11"
+    },
+    "/lyman/data1/obsdata/7DT11/2024-03-05": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-03-05",
+      "telescope": "7DT11"
+    },
+    "/lyman/data1/obsdata/7DT11/2024-03-10": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-03-10",
+      "telescope": "7DT11"
+    },
+    "/lyman/data1/obsdata/7DT11/2024-03-06": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-03-06",
+      "telescope": "7DT11"
+    },
+    "/lyman/data1/obsdata/7DT08/2024-02-29": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-29",
+      "telescope": "7DT08"
+    },
+    "/lyman/data1/obsdata/7DT08/2024-02-04": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-04",
+      "telescope": "7DT08"
+    },
+    "/lyman/data1/obsdata/7DT08/2024-02-09": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-09",
+      "telescope": "7DT08"
+    },
+    "/lyman/data1/obsdata/7DT08/2024-02-12": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-12",
+      "telescope": "7DT08"
+    },
+    "/lyman/data1/obsdata/7DT08/2024-02-07": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-07",
+      "telescope": "7DT08"
+    },
+    "/lyman/data1/obsdata/7DT08/2024-02-03": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-03",
+      "telescope": "7DT08"
+    },
+    "/lyman/data1/obsdata/7DT08/2024-02-14": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-14",
+      "telescope": "7DT08"
+    },
+    "/lyman/data1/obsdata/7DT08/2024-02-18": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-18",
+      "telescope": "7DT08"
+    },
+    "/lyman/data1/obsdata/7DT08/2024-02-19": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-19",
+      "telescope": "7DT08"
+    },
+    "/lyman/data1/obsdata/7DT08/2024-01-29": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-29",
+      "telescope": "7DT08"
+    },
+    "/lyman/data1/obsdata/7DT08/2024-02-15": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-15",
+      "telescope": "7DT08"
+    },
+    "/lyman/data1/obsdata/7DT08/2024-02-28": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-28",
+      "telescope": "7DT08"
+    },
+    "/lyman/data1/obsdata/7DT08/2024-02-26": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-26",
+      "telescope": "7DT08"
+    },
+    "/lyman/data1/obsdata/7DT08/2024-02-08": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-08",
+      "telescope": "7DT08"
+    },
+    "/lyman/data1/obsdata/7DT08/2024-02-10": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-10",
+      "telescope": "7DT08"
+    },
+    "/lyman/data1/obsdata/7DT08/2024-02-05": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-05",
+      "telescope": "7DT08"
+    },
+    "/lyman/data1/obsdata/7DT08/2024-01-30": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-30",
+      "telescope": "7DT08"
+    },
+    "/lyman/data1/obsdata/7DT08/2024-01-28": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-28",
+      "telescope": "7DT08"
+    },
+    "/lyman/data1/obsdata/7DT08/2024-02-01": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-01",
+      "telescope": "7DT08"
+    },
+    "/lyman/data1/obsdata/7DT08/2024-02-17": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-17",
+      "telescope": "7DT08"
+    },
+    "/lyman/data1/obsdata/7DT08/2024-02-02": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-02",
+      "telescope": "7DT08"
+    },
+    "/lyman/data1/obsdata/7DT08/2024-02-13": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-13",
+      "telescope": "7DT08"
+    },
+    "/lyman/data1/obsdata/7DT08/2024-02-06": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-06",
+      "telescope": "7DT08"
+    },
+    "/lyman/data1/obsdata/7DT08/2024-02-20": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-20",
+      "telescope": "7DT08"
+    },
+    "/lyman/data1/obsdata/7DT08/2024-02-16": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-16",
+      "telescope": "7DT08"
+    },
+    "/lyman/data1/obsdata/7DT08/2024-02-11": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-11",
+      "telescope": "7DT08"
+    },
+    "/lyman/data1/obsdata/7DT08/2024-03-05": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-03-05",
+      "telescope": "7DT08"
+    },
+    "/lyman/data1/obsdata/7DT08/2024-02-22": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-22",
+      "telescope": "7DT08"
+    },
+    "/lyman/data1/obsdata/7DT08/2024-03-10": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-03-10",
+      "telescope": "7DT08"
+    },
+    "/lyman/data1/obsdata/7DT08/2024-03-06": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-03-06",
+      "telescope": "7DT08"
+    },
+    "/lyman/data1/obsdata/7DT08/2024-01-31": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-31",
+      "telescope": "7DT08"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-10-30": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-30",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-02-29": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-29",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-02-04": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-04",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-01-09": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-09",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-12-30": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-30",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-11-12": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-12",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-11-04": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-04",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-01-21": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-21",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-01-04": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-04",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-01-11": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-11",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-11-27": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-27",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-01-23": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-23",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-02-09": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-09",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-12-14": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-14",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-12-19": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-19",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-11-02": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-02",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-02-12": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-12",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-11-30": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-30",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-02-07": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-07",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-12-07": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-07",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-11-24": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-24",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-01-24": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-24",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-12-03": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-03",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-12-04": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-04",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-11-17": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-17",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-12-20": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-20",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-02-03": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-03",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-10-28": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-28",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-11-19": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-19",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-12-05": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-05",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-10-31": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-31",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-12-09": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-09",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-01-25": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-25",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-02-14": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-14",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-01-13": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-13",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-02-18": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-18",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-02-19": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-19",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-12-26": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-26",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-12-15": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-15",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-01-29": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-29",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-12-31": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-31",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-11-06": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-06",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-12-16": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-16",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-01-01": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-01",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-11-23": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-23",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-02-15": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-15",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-11-11": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-11",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-02-28": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-28",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-01-03": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-03",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-01-07": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-07",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-02-26": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-26",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-01-02": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-02",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-12-29": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-29",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-02-08": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-08",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-12-06": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-06",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-12-21": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-21",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-11-10": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-10",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-11-25": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-25",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-01-06": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-06",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-10-27": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-27",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-12-10": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-10",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-12-22": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-22",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-11-05": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-05",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-11-15": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-15",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-10-26": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-26",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-11-08": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-08",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-12-23": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-23",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-02-10": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-10",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-01-27": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-27",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-11-29": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-29",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-11-14": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-14",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-10-24": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-24",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-11-21": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-21",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-11-28": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-28",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-02-05": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-05",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-01-26": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-26",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-11-03": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-03",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-11-07": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-07",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-12-11": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-11",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-01-30": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-30",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-01-28": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-28",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-10-23": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-23",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-01-12": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-12",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-02-01": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-01",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-02-17": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-17",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-11-26": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-26",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-01-15": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-15",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-11-18": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-18",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-12-24": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-24",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-02-02": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-02",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-01-10": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-10",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-12-18": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-18",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-10-25": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-25",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-01-05": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-05",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-11-13": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-13",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-12-17": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-17",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-02-13": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-13",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-12-02": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-02",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-12-12": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-12",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-11-20": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-20",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-01-14": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-14",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-01-22": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-22",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-02-06": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-06",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-11-16": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-16",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-02-20": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-20",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-12-01": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-01",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-11-22": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-22",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-02-16": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-16",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-10-19": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-19",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-02-11": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-11",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-10-20": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-20",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-03-05": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-03-05",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-01-08": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-08",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-11-01": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-01",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-02-22": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-22",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-03-10": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-03-10",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2024-03-06": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-03-06",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-10-17": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-17",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT03/2023-12-08": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-08",
+      "telescope": "7DT03"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-02-29": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-29",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-02-04": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-04",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-01-09": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-09",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-12-30": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-30",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-11-12": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-12",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-11-04": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-04",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-01-21": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-21",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-01-04": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-04",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-01-11": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-11",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-11-27": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-27",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-01-23": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-23",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-02-09": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-09",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-12-14": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-14",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-12-19": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-19",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-11-02": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-02",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-02-12": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-12",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-11-30": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-30",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-02-07": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-07",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-12-07": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-07",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-11-24": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-24",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-01-24": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-24",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-01-17": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-17",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-12-03": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-03",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-12-04": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-04",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-11-17": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-17",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-12-20": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-20",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-02-03": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-03",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-10-28": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-28",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-11-19": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-19",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-12-05": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-05",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-12-09": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-09",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-01-16": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-16",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-01-25": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-25",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-02-14": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-14",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-01-13": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-13",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-01-19": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-19",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-02-18": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-18",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-10-16": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-16",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-02-19": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-19",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-12-26": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-26",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-12-15": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-15",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-01-29": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-29",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-12-31": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-31",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-11-06": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-06",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-12-16": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-16",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-01-01": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-01",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-11-23": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-23",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-02-15": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-15",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-11-11": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-11",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-02-28": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-28",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-01-03": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-03",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-01-07": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-07",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-02-26": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-26",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-01-02": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-02",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-12-29": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-29",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-02-08": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-08",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-12-06": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-06",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-12-21": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-21",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-11-10": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-10",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-11-25": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-25",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-01-06": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-06",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-10-27": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-27",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-12-10": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-10",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-12-22": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-22",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-11-05": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-05",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-11-15": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-15",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-10-26": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-26",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-11-08": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-08",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-12-23": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-23",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-02-10": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-10",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-01-27": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-27",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-11-29": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-29",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-11-14": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-14",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-11-21": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-21",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-11-28": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-28",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-02-05": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-05",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-11-03": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-03",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-11-07": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-07",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-12-11": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-11",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-01-30": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-30",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-01-28": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-28",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-01-12": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-12",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-02-01": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-01",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-02-17": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-17",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-11-26": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-26",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-01-15": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-15",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-11-18": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-18",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-12-24": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-24",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-02-02": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-02",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-01-10": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-10",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-12-18": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-18",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-10-25": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-25",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-01-05": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-05",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-11-13": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-13",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-12-17": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-17",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-02-13": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-13",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-12-02": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-02",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-12-12": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-12",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-11-20": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-20",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-01-14": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-14",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-01-22": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-22",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-02-06": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-06",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-11-16": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-16",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-01-18": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-18",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-02-20": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-20",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-12-01": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-01",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-11-22": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-22",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-02-16": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-16",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-10-19": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-19",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-02-11": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-11",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-10-20": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-20",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-03-05": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-03-05",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-01-08": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-08",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-11-01": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-11-01",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-02-22": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-02-22",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-03-10": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-03-10",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-03-06": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-03-06",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2024-01-31": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2024-01-31",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-10-17": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-10-17",
+      "telescope": "7DT02"
+    },
+    "/lyman/data1/obsdata/7DT02/2023-12-08": {
+      "detected_at": 1751424234.5235143,
+      "stability_checks": 0,
+      "date": "2023-12-08",
+      "telescope": "7DT02"
+    }
+  },
+  "processed_folders": [],
+  "last_saved": 1751427741.121384
+}

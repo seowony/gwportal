@@ -1,0 +1,4563 @@
+# === Standard Library Imports ===
+import os
+import re
+import datetime
+import pytz
+import time
+import traceback
+import csv
+import warnings
+import hashlib
+import uuid
+import multiprocessing as mp
+from queue import Queue
+import threading
+from collections import defaultdict, Counter
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
+
+# === Scientific Computing ===
+import numpy as np
+from astropy.io import fits
+from astropy.time import Time
+from astropy.coordinates import get_body, EarthLocation, AltAz
+import astropy.units as u
+
+# === Django Core ===
+from django.contrib.gis.db import models as gis_models
+from django.db import models, connection
+from django.utils import timezone
+from django.conf import settings
+from django.contrib.gis.geos import Polygon, Point, MultiPolygon
+from django.db.models import Min, Max, Count, Sum, BooleanField, Q
+from django.db.models.expressions import RawSQL
+
+# === Local Application Imports ===
+from facility.models import Unit, Filter #, FilterWheel, Camera, Weather
+
+# === Constants ===
+CHILE_TIMEZONE = pytz.timezone('America/Santiago')
+
+class Night(models.Model):
+    """
+    Represents an observing night based on data directories.
+    
+    This model tracks all observations found within a specific date directory
+    and provides statistics across all telescope units and tiles.
+    """
+    # Date in YYYY-MM-DD format (stores as date object)
+    # This matches the data directory naming convention
+    date = models.DateField(unique=True, db_index=True)
+    
+    # Environmental information
+    sunset = models.DateTimeField(null=True, blank=True)
+    sunrise = models.DateTimeField(null=True, blank=True)
+    evening_twilight_end = models.DateTimeField(null=True, blank=True)
+    morning_twilight_start = models.DateTimeField(null=True, blank=True)
+    evening_astronomical_twilight = models.DateTimeField(null=True, blank=True)
+    morning_astronomical_twilight = models.DateTimeField(null=True, blank=True)
+
+    # Moon information
+    moon_phase = models.FloatField(null=True, blank=True, help_text="Moon phase (0=new, 0.25=first quarter, 0.5=full, 0.75=last quarter)")
+    moon_illumination = models.FloatField(null=True, blank=True, help_text="Percentage of moon illuminated (0-100)")
+    moon_alt_max = models.FloatField(null=True, blank=True, help_text="Maximum moon altitude during night in degrees")
+    moon_ra = models.FloatField(null=True, blank=True, help_text="Moon right ascension at midnight (degrees)")
+    moon_dec = models.FloatField(null=True, blank=True, help_text="Moon declination at midnight (degrees)")
+    
+    # Weather summary for the night
+    sky_quality = models.CharField(max_length=20, choices=[
+        ('unknown', 'Unknown/Not Determined'),
+        ('photometric', 'Photometric'),
+        ('clear', 'Clear'),
+        ('cloudy', 'Cloudy'),
+        ('partly_cloudy', 'Partly Cloudy'),
+        ('bad', 'Bad')
+    ], default='unknown')
+    
+    # Automatic statistics - updated via methods
+    bias_count = models.IntegerField(default=0, help_text="Number of bias frames taken")
+    dark_count = models.IntegerField(default=0, help_text="Number of dark frames taken")
+    flat_count = models.IntegerField(default=0, help_text="Number of flat frames taken")
+    science_count = models.IntegerField(default=0, help_text="Number of science frames taken")
+    
+    # Tile coverage statistics
+    distinct_tiles = models.IntegerField(default=0, help_text="Number of distinct tiles observed")
+    total_exptime = models.FloatField(default=0, help_text="Total exposure time in seconds")
+    
+    # Filter statistics 
+    filter_statistics = models.JSONField(default=dict, blank=True, 
+                                        help_text="Statistics by filter (counts, exposure times)")
+    
+    # Environmental statistics
+    avg_seeing = models.FloatField(null=True, blank=True, help_text="Average seeing in arcseconds")
+    #avg_humidity = models.FloatField(null=True, blank=True, help_text="Average humidity (%)")
+    
+    # File system information
+    data_directory = models.CharField(max_length=255, blank=True, help_text="Path to data directory for this night")
+    data_directories = models.JSONField(default=list, blank=True, 
+                                       help_text="List of all data directories associated with this night")
+    directory_variants = models.JSONField(default=dict, blank=True, help_text="Directory variants information")
+    
+    # Observer notes
+    notes = models.TextField(blank=True, help_text="Observer notes for this night")
+    
+    # Record keeping
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    # File scanning status fields
+    files_scanned = models.BooleanField(default=False, 
+        help_text="Whether FITS files have been scanned for this night")
+    scan_started_at = models.DateTimeField(null=True, blank=True,
+        help_text="When file scanning started")
+    scan_completed_at = models.DateTimeField(null=True, blank=True,
+        help_text="When file scanning completed")
+    scan_status = models.CharField(max_length=20, choices=[
+        ('not_started', 'Not Started'),
+        ('in_progress', 'In Progress'), 
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+        ('partial', 'Partially Completed')
+    ], default='not_started')
+    
+    class Meta:
+        ordering = ['-date']
+        indexes = [
+            models.Index(fields=['date']),
+            models.Index(fields=['sky_quality']),
+        ]
+    
+    def __str__(self):
+        return f"Night: {self.date.strftime('%Y-%m-%d')}"
+
+    @property
+    def total_frames(self):
+        """Total number of frames for this night."""
+        return self.science_count + self.bias_count + self.dark_count + self.flat_count
+    
+    @property 
+    def data_volume_gb(self):
+        """Total data volume in GB for this night."""
+        from django.db.models import Sum
+        
+        total_bytes = 0
+        for frame_class in [ScienceFrame, BiasFrame, DarkFrame, FlatFrame]:
+            result = frame_class.objects.filter(night=self).aggregate(
+                total_size=Sum('file_size')
+            )
+            if result['total_size']:
+                total_bytes += result['total_size']
+        
+        return total_bytes / (1024**3)  # Convert to GB
+
+    @property
+    def dark_hours(self):
+        """Calculate approximate dark hours between evening and morning twilights"""
+        if self.evening_twilight_end and self.morning_twilight_start:
+            delta = self.morning_twilight_start - self.evening_twilight_end
+            return delta.total_seconds() / 3600
+        return None
+    
+    def update_statistics(self):
+        """Update observation count statistics across all units and filters"""
+        
+        # Science frames statistics by night
+        science_stats = ScienceFrame.objects.filter(night=self).aggregate(
+            count=Count('id'),
+            total_exptime=Sum('exptime'),
+            distinct_tiles=Count('tile', distinct=True)
+        )
+        
+        # Get filter statistics
+        filter_stats = ScienceFrame.objects.filter(night=self).values(
+            'filter__name'
+        ).annotate(
+            frame_count=Count('id'),
+            total_exptime=Sum('exptime'),
+            distinct_tiles=Count('tile', distinct=True)
+        ).order_by('filter__name')
+        
+        # Format filter statistics as a structured dictionary
+        filter_data = {}
+        for stat in filter_stats:
+            filter_name = stat['filter__name']
+            if filter_name:  # Ensure we have a valid filter name
+                filter_data[filter_name] = {
+                    'count': stat['frame_count'],
+                    'exposure_time': stat['total_exptime'] or 0,
+                    'distinct_tiles': stat['distinct_tiles'] or 0
+                }
+        
+        # Frame type counts
+        self.bias_count = BiasFrame.objects.filter(night=self).count()
+        self.dark_count = DarkFrame.objects.filter(night=self).count()
+        self.flat_count = FlatFrame.objects.filter(night=self).count()
+        self.science_count = science_stats['count'] or 0
+        
+        # Tile statistics
+        self.distinct_tiles = science_stats['distinct_tiles'] or 0
+        self.total_exptime = science_stats['total_exptime'] or 0
+        
+        # Update filter statistics
+        self.filter_statistics = filter_data
+        
+        self.save(update_fields=[
+            'bias_count', 'dark_count', 'flat_count', 'science_count',
+            'distinct_tiles', 'total_exptime', 'filter_statistics'
+        ])
+    
+    @property
+    def frames_by_unit(self):
+        """Get frame counts by unit for this night"""
+        
+        # Get all units that observed this night
+        science_by_unit = ScienceFrame.objects.filter(night=self).values(
+            'unit__name'
+        ).annotate(frame_count=Count('id')).order_by('unit__name')
+        
+        # Get calibration counts by unit
+        bias_by_unit = BiasFrame.objects.filter(night=self).values(
+            'unit__name'
+        ).annotate(frame_count=Count('id')).order_by('unit__name')
+        
+        dark_by_unit = DarkFrame.objects.filter(night=self).values(
+            'unit__name'
+        ).annotate(frame_count=Count('id')).order_by('unit__name')
+        
+        flat_by_unit = FlatFrame.objects.filter(night=self).values(
+            'unit__name'
+        ).annotate(frame_count=Count('id')).order_by('unit__name')
+        
+        # Combine statistics
+        units = {}
+        for stat in science_by_unit:
+            unit_name = stat['unit__name']
+            if unit_name not in units:
+                units[unit_name] = {'science': 0, 'bias': 0, 'dark': 0, 'flat': 0}
+            units[unit_name]['science'] = stat['frame_count']
+            
+        for stat in bias_by_unit:
+            unit_name = stat['unit__name']
+            if unit_name not in units:
+                units[unit_name] = {'science': 0, 'bias': 0, 'dark': 0, 'flat': 0}
+            units[unit_name]['bias'] = stat['frame_count']
+            
+        for stat in dark_by_unit:
+            unit_name = stat['unit__name']
+            if unit_name not in units:
+                units[unit_name] = {'science': 0, 'bias': 0, 'dark': 0, 'flat': 0}
+            units[unit_name]['dark'] = stat['frame_count']
+            
+        for stat in flat_by_unit:
+            unit_name = stat['unit__name']
+            if unit_name not in units:
+                units[unit_name] = {'science': 0, 'bias': 0, 'dark': 0, 'flat': 0}
+            units[unit_name]['flat'] = stat['frame_count']
+            
+        return units
+    
+    @property
+    def tiles_observed(self):
+        """Get list of tiles observed on this night with exposure counts"""
+        
+        return ScienceFrame.objects.filter(
+            night=self, tile__isnull=False
+        ).values('tile__name').annotate(
+            frame_count=Count('id')
+        ).order_by('tile__name')
+    
+    @classmethod
+    def get_or_create_for_date(cls, date):
+        """Get existing night or create a new one for the given date"""
+        if isinstance(date, datetime.datetime):
+            date = date.date()
+            
+        # Check if night already exists
+        try:
+            return cls.objects.get(date=date)
+        except cls.DoesNotExist:
+            pass
+        
+        # Try to find actual directory structure for this date
+        base_path = "/lyman/data1/obsdata"
+        date_str = date.strftime('%Y-%m-%d')
+        
+        # Look for directories with this date across all units
+        found_directories = []
+        preferred_directory = None
+        
+        if os.path.exists(base_path):
+            # Check all unit directories
+            for item in os.listdir(base_path):
+                unit_path = os.path.join(base_path, item)
+                if os.path.isdir(unit_path) and item.startswith('7DT'):
+                    # Look for date directories in this unit
+                    try:
+                        for subitem in os.listdir(unit_path):
+                            if subitem.startswith(date_str):
+                                full_path = os.path.join(unit_path, subitem)
+                                if os.path.isdir(full_path):
+                                    found_directories.append(full_path)
+                                    
+                                    # Prefer gain2750 directories
+                                    if '_gain2750' in subitem:
+                                        preferred_directory = full_path
+                                    elif preferred_directory is None and '_gain' in subitem:
+                                        preferred_directory = full_path
+                                    elif preferred_directory is None:
+                                        preferred_directory = full_path
+                    except OSError:
+                        continue
+        
+        # Set default directory
+        if preferred_directory:
+            data_directory = preferred_directory
+        elif found_directories:
+            data_directory = found_directories[0]
+        else:
+            # Fallback to expected path structure
+            data_directory = f"{base_path}/{date_str}"
+        
+        # Create the night record
+        night = cls.objects.create(
+            date=date,
+            data_directory=data_directory,
+            data_directories=found_directories if found_directories else [data_directory]
+        )
+        
+        return night
+
+    @classmethod
+    def find_nights_from_folders(cls, base_path="/lyman/data1/obsdata", incremental=True, force_full_scan=False, limit=None, exclude_test=True):
+        """
+        Scan the filesystem to find and create Night records from folder structure.
+        
+        Parameters:
+        -----------
+        base_path: str
+            Base path containing unit directories
+        incremental: bool
+            If True, only scan directories newer than the last recorded night
+        force_full_scan: bool
+            If True, scan all directories regardless of incremental setting
+        limit: int, optional
+            Limit the number of nights to process (useful for testing)
+    
+        Handles various directory naming patterns including:
+        - Standard dates: 2023-11-14
+        - Dates with gain settings: 2024-05-17_gain2750 (primary format)
+        - Dates with binning: 2024-03-06_2x2
+        - Complex combinations: 2024-03-10_2x2_gain0
+        - Dates with observation types: 2023-11-17_ToO, 2023-12-10_flat
+        - Dates with time qualifiers: 2023-12-08_morning_dark
+        """
+        created_count = 0
+        updated_count = 0
+        skipped_count = 0
+        test_excluded_count = 0  # Track excluded TEST directories
+    
+        # Regex to extract date and any suffix
+        date_pattern = re.compile(r'^(\d{4}-\d{2}-\d{2})(?:_(.+))?$')
+        gain_pattern = re.compile(r'gain(\d+)')
+
+        # Date filtering
+        start_date = datetime.date(2023, 10, 9)
+        today = datetime.date.today()
+        print(f"Date filter: {start_date} to {today}")
+
+        if exclude_test:
+            print("Excluding TEST/test directories")
+    
+        # Determine the cutoff date for incremental scanning
+        cutoff_date = None
+        if incremental and not force_full_scan:
+            # Get the latest night in the database
+            latest_night = cls.objects.order_by('-date').first()
+            if latest_night:
+                cutoff_date = latest_night.date
+                print(f"Incremental scan: Looking for directories after {cutoff_date}")
+    
+        # Get all unit directories sorted by name
+        unit_dirs = []
+        for item in sorted(os.listdir(base_path)):
+            unit_path = os.path.join(base_path, item)
+            if os.path.isdir(unit_path) and item.startswith('7DT'):
+                unit_dirs.append((item, unit_path))
+    
+        if not unit_dirs:
+            print("No unit directories found")
+            return {
+                'created': 0,
+                'updated': 0,
+                'skipped': 0,
+                'total': 0,
+                'dates_found': 0
+            }
+    
+        print(f"Found {len(unit_dirs)} unit directories: {[name for name, _ in unit_dirs]}")
+    
+        # Dictionary to collect all directories by date
+        all_directories = {}
+    
+        # Scan each unit directory
+        for unit_name, unit_dir in unit_dirs:
+            print(f"Scanning unit {unit_name}...")
+        
+            try:
+                unit_items = sorted(os.listdir(unit_dir))
+            except OSError as e:
+                print(f"Error reading {unit_dir}: {e}")
+                continue
+            
+            for item in unit_items:
+                item_path = os.path.join(unit_dir, item)
+                if not os.path.isdir(item_path):
+                    continue
+         
+                # Skip TEST directories if exclude_test is True
+                if exclude_test and ('TEST' in item.upper() or 'test' in item):
+                    test_excluded_count += 1
+                    print(f"  Skipping TEST directory: {item}")
+                    continue
+       
+                # Extract date and suffix from directory name
+                match = date_pattern.match(item)
+                if not match:
+                    continue
+            
+                date_str = match.group(1)
+                suffix = match.group(2) or ""
+
+                # Additional TEST check in suffix
+                if exclude_test and ('TEST' in suffix.upper() or 'test' in suffix):
+                    test_excluded_count += 1
+                    print(f"  Skipping TEST suffix: {item}")
+                    continue
+            
+                # Skip obviously invalid dates
+                if '-00-' in date_str:
+                    continue
+                
+                try:
+                    date_obj = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
+
+                    if date_obj < start_date:
+                        print(f"  Skipping too old: {date_obj} (before {start_date})")
+                        skipped_count += 1
+                        continue
+                    
+                    if date_obj > today:
+                        print(f"  Skipping future date: {date_obj} (after {today})")
+                        skipped_count += 1
+                        continue
+                
+                    # Skip dates before cutoff for incremental scan
+                    if cutoff_date and date_obj <= cutoff_date:
+                        skipped_count += 1
+                        continue
+                
+                    # Initialize tracking for this date if needed
+                    if date_obj not in all_directories:
+                        all_directories[date_obj] = {
+                            'variants': {},
+                            'preferred': None,
+                            'units': set()
+                        }
+                
+                    # Create variant key
+                    variant_key = f"{unit_name}_{suffix}" if unit_name and suffix else unit_name or suffix or "default"
+                
+                    # Store directory information
+                    all_directories[date_obj]['variants'][variant_key] = {
+                        'path': item_path,
+                        'unit': unit_name,
+                        'suffix': suffix,
+                        'is_gain': 'gain' in suffix,
+                        'gain_value': int(gain_pattern.search(suffix).group(1)) if gain_pattern.search(suffix) else None
+                    }
+                
+                    # Track units for this date
+                    all_directories[date_obj]['units'].add(unit_name)
+                
+                    # Determine preferred directory (prioritize gain2750)
+                    current_var = all_directories[date_obj]['variants'][variant_key]
+                    if all_directories[date_obj]['preferred'] is None:
+                        all_directories[date_obj]['preferred'] = variant_key
+                    elif current_var['is_gain'] and current_var['gain_value'] == 2750:
+                        all_directories[date_obj]['preferred'] = variant_key
+                    
+                except ValueError:
+                    continue
+    
+        # Process collected directories in chronological order
+        sorted_dates = sorted(all_directories.keys())
+        print(f"Processing {len(sorted_dates)} unique dates...")
+
+        # Apply limit if specified
+        if limit:
+            sorted_dates = sorted_dates[:limit]
+            print(f"Processing first {len(sorted_dates)} dates (limited by --limit {limit})...")
+        else:
+            print(f"Processing {len(sorted_dates)} unique dates...")
+    
+        for date_obj in sorted_dates:
+            date_info = all_directories[date_obj]
+        
+            # Get or create night
+            night, is_new = cls.objects.get_or_create(date=date_obj)
+        
+            if is_new:
+                created_count += 1
+                print(f"Created Night: {date_obj}")
+            else:
+                updated_count += 1
+                print(f"Updated Night: {date_obj}")
+        
+            # Build data directories list
+            all_paths = [info['path'] for info in date_info['variants'].values()]
+        
+            # Set preferred directory as main data_directory
+            preferred_key = date_info['preferred']
+            if preferred_key:
+                preferred_path = date_info['variants'][preferred_key]['path']
+                night.data_directory = preferred_path
+            else:
+                night.data_directory = os.path.join(base_path, date_obj.strftime("%Y-%m-%d"))
+        
+            # Update data directories list
+            night.data_directories = all_paths
+        
+            # Store variant information
+            night.directory_variants = {
+                'variants': {key: {
+                    'path': info['path'],
+                    'unit': info['unit'],
+                    'suffix': info['suffix']
+                } for key, info in date_info['variants'].items()},
+                'preferred': preferred_key,
+                'units': list(date_info['units'])
+            }
+        
+            night.save()
+
+        print(f"Excluded {test_excluded_count} TEST directories")   
+ 
+        return {
+            'created': created_count,
+            'updated': updated_count,
+            'skipped': skipped_count,
+            'test_excluded': test_excluded_count,
+            'total': created_count + updated_count,
+            'dates_found': len(all_directories)
+        }
+
+    @classmethod
+    def bulk_initialize_from_filesystem(cls, base_path="/lyman/data1/obsdata", limit=None):
+        """
+        One-time bulk initialization of all historical night data.
+    
+        Parameters:
+        -----------
+        limit: int, optional
+            Limit the number of nights to process (useful for testing)
+        """
+        print("Starting bulk initialization of Night records from filesystem...")
+        if limit:
+            print(f"Limited to first {limit} nights for testing...")
+    
+        result = cls.find_nights_from_folders(
+            base_path=base_path, 
+            incremental=False, 
+            force_full_scan=True,
+            limit=limit
+        )
+    
+        print(f"\nBulk initialization complete:")
+        print(f"  Created: {result['created']} nights")
+        print(f"  Updated: {result['updated']} nights")
+        print(f"  Total processed: {result['total']} nights")
+        print(f"  Unique dates found: {result['dates_found']}")
+    
+        return result
+
+    @classmethod
+    def incremental_update(cls, base_path="/lyman/data1/obsdata"):
+        """
+        Incremental update - only scan directories newer than the latest night in DB.
+        This should be used for regular updates.
+        """
+        print("Starting incremental update...")
+    
+        result = cls.find_nights_from_folders(
+            base_path=base_path, 
+            incremental=True, 
+            force_full_scan=False
+        )
+    
+        print(f"Incremental update complete:")
+        print(f"  Created: {result['created']} new nights")
+        print(f"  Updated: {result['updated']} existing nights") 
+        print(f"  Skipped: {result['skipped']} older directories")
+    
+        # Update statistics only for new/updated nights
+        if result['created'] > 0:
+            latest_date = cls.objects.order_by('-date').first().date
+            recent_nights = cls.objects.filter(date__gte=latest_date - datetime.timedelta(days=result['created']))
+            for night in recent_nights:
+                night.update_statistics()
+    
+        return result
+
+    @classmethod
+    def validate_folder_structure(cls, base_path="/lyman/data1/obsdata", report_only=True):
+        """
+        Validate observation folder structure and identify non-compliant directories.
+        
+        This method scans the observation directory structure and validates folder names
+        against expected naming conventions for the 7DT survey.
+        
+        Expected folder naming patterns:
+        - Standard dates: YYYY-MM-DD (e.g., 2023-11-14)
+        - Dates with gain settings: YYYY-MM-DD_gainXXXX (e.g., 2024-05-17_gain2750)
+        - Dates with binning: YYYY-MM-DD_NxN (e.g., 2024-03-06_2x2)
+        - Complex combinations: YYYY-MM-DD_NxN_gainXXXX (e.g., 2024-03-10_2x2_gain0)
+        - Dates with observation types: YYYY-MM-DD_ToO, YYYY-MM-DD_flat
+        - Dates with time qualifiers: YYYY-MM-DD_morning_dark
+        
+        Parameters:
+        -----------
+        base_path : str
+            Root directory containing telescope unit subdirectories (7DT01, 7DT02, etc.)
+        report_only : bool
+            If True, only analyze and report issues without creating Night records
+        
+        Returns:
+        --------
+        dict : Validation results containing:
+            - invalid_folders: List of folders with invalid date formats
+            - suspicious_folders: List of folders with unknown suffixes
+            - old_folders: List of folders with dates before survey start (2023-10-09)
+            - future_folders: List of folders with dates after today
+            - valid_folders: List of properly formatted folders
+            - statistics: Summary counts for each category
+        """
+        # Define validation patterns and acceptable suffixes
+        date_pattern = re.compile(r'^(\d{4}-\d{2}-\d{2})(?:_(.+))?$')
+        valid_suffixes = [
+            # Gain settings
+            'gain0', 'gain2750', 'gain1000', 'gain1500', 'gain2000',
+            # Binning modes
+            '2x2', '3x3', '4x4',
+            # Observation types
+            'ToO', 'flat', 'dark', 'bias',
+            # Time qualifiers
+            'morning_dark', 'morning_flat',
+            # Engineering/test modes
+            'test', 'eng', 'engineering'
+        ]
+        
+        # Define valid date range for 7DT survey
+        start_date = datetime.date(2023, 10, 9)  # Survey start date
+        today = datetime.date.today()
+        
+        # Initialize results structure
+        results = {
+            'invalid_folders': [],      # Folders with unparseable dates
+            'suspicious_folders': [],   # Folders with unknown suffixes
+            'old_folders': [],         # Folders predating survey start
+            'future_folders': [],      # Folders with future dates
+            'valid_folders': [],       # Properly formatted folders
+            'statistics': {
+                'total_folders': 0,
+                'valid': 0,
+                'invalid_date': 0,
+                'invalid_suffix': 0,
+                'too_old': 0,
+                'future_date': 0,
+                'suspicious': 0
+            }
+        }
+        
+        print(f"🔍 Validating observation folder structure in: {base_path}")
+        print(f"📅 Expected date range: {start_date} to {today}")
+        print(f"✅ Valid suffixes: {', '.join(valid_suffixes)}")
+        print("=" * 80)
+        
+        # Discover telescope unit directories (7DT01, 7DT02, etc.)
+        unit_dirs = []
+        try:
+            for item in sorted(os.listdir(base_path)):
+                unit_path = os.path.join(base_path, item)
+                if os.path.isdir(unit_path) and item.startswith('7DT'):
+                    unit_dirs.append((item, unit_path))
+        except OSError as e:
+            print(f"❌ Error accessing base directory {base_path}: {e}")
+            return results
+        
+        if not unit_dirs:
+            print("❌ No telescope unit directories found (expected 7DT01, 7DT02, etc.)")
+            return results
+        
+        print(f"🔭 Found {len(unit_dirs)} telescope unit directories: {[name for name, _ in unit_dirs]}")
+        
+        # Analyze each telescope unit directory
+        for unit_name, unit_dir in unit_dirs:
+            print(f"\n📂 Analyzing unit: {unit_name}")
+            
+            try:
+                unit_items = sorted(os.listdir(unit_dir))
+            except OSError as e:
+                print(f"  ❌ Error reading directory {unit_dir}: {e}")
+                continue
+            
+            # Examine each subdirectory (expected to be observation dates)
+            for item in unit_items:
+                item_path = os.path.join(unit_dir, item)
+                if not os.path.isdir(item_path):
+                    continue  # Skip non-directory items
+                
+                results['statistics']['total_folders'] += 1
+                folder_info = {
+                    'path': item_path,
+                    'name': item,
+                    'unit': unit_name,
+                    'issues': []
+                }
+                
+                # Validate date format using regex pattern
+                match = date_pattern.match(item)
+                if not match:
+                    folder_info['issues'].append('Invalid date format - expected YYYY-MM-DD[_suffix]')
+                    results['invalid_folders'].append(folder_info)
+                    results['statistics']['invalid_date'] += 1
+                    print(f"  ❌ INVALID FORMAT: {item}")
+                    continue
+                
+                date_str = match.group(1)
+                suffix = match.group(2) or ""
+                
+                # Check for obviously invalid dates (e.g., 2023-00-15, 2023-13-01)
+                if '-00-' in date_str or '-13-' in date_str:
+                    folder_info['issues'].append('Invalid date components (month/day = 00 or month > 12)')
+                    results['invalid_folders'].append(folder_info)
+                    results['statistics']['invalid_date'] += 1
+                    print(f"  ❌ INVALID DATE: {item} (invalid month/day)")
+                    continue
+                
+                # Attempt to parse the date
+                try:
+                    date_obj = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
+                    folder_info['date'] = date_obj
+                    folder_info['suffix'] = suffix
+                except ValueError:
+                    folder_info['issues'].append('Unparseable date format')
+                    results['invalid_folders'].append(folder_info)
+                    results['statistics']['invalid_date'] += 1
+                    print(f"  ❌ UNPARSEABLE DATE: {item}")
+                    continue
+                
+                # Validate date is within acceptable range
+                if date_obj < start_date:
+                    folder_info['issues'].append(f'Date predates survey start ({start_date})')
+                    results['old_folders'].append(folder_info)
+                    results['statistics']['too_old'] += 1
+                    print(f"  ⚠️  TOO OLD: {item} ({date_obj} < {start_date})")
+                    continue
+                
+                if date_obj > today:
+                    folder_info['issues'].append(f'Future date (after {today})')
+                    results['future_folders'].append(folder_info)
+                    results['statistics']['future_date'] += 1
+                    print(f"  ⚠️  FUTURE DATE: {item} ({date_obj} > {today})")
+                    continue
+                
+                # Validate suffix if present
+                if suffix:
+                    suffix_valid = False
+                    
+                    # Check for exact matches with known suffixes
+                    for valid_suffix in valid_suffixes:
+                        if valid_suffix in suffix:
+                            suffix_valid = True
+                            break
+                    
+                    # Allow complex combinations (e.g., "2x2_gain2750", "ToO_gain2750")
+                    if not suffix_valid:
+                        suffix_parts = suffix.split('_')
+                        if all(any(vs in part for vs in valid_suffixes) for part in suffix_parts):
+                            suffix_valid = True
+                    
+                    if not suffix_valid:
+                        folder_info['issues'].append(f'Unknown suffix: "{suffix}"')
+                        results['suspicious_folders'].append(folder_info)
+                        results['statistics']['suspicious'] += 1
+                        print(f"  ⚠️  SUSPICIOUS SUFFIX: {item} (unknown: {suffix})")
+                        continue
+                
+                # If we reach here, the folder is valid
+                results['valid_folders'].append(folder_info)
+                results['statistics']['valid'] += 1
+                print(f"  ✅ VALID: {item}")
+        
+        # Print comprehensive summary
+        print("\n" + "=" * 80)
+        print("📊 VALIDATION SUMMARY REPORT")
+        print("=" * 80)
+        stats = results['statistics']
+        print(f"📁 Total folders scanned: {stats['total_folders']}")
+        print(f"✅ Valid folders: {stats['valid']}")
+        print(f"❌ Invalid date format: {stats['invalid_date']}")
+        print(f"⚠️  Suspicious suffixes: {stats['suspicious']}")
+        print(f"📅 Too old (before {start_date}): {stats['too_old']}")
+        print(f"🔮 Future dates: {stats['future_date']}")
+        
+        # Calculate compliance percentage
+        if stats['total_folders'] > 0:
+            compliance_rate = (stats['valid'] / stats['total_folders']) * 100
+            print(f"📈 Compliance rate: {compliance_rate:.1f}%")
+        
+        return results
+
+    @classmethod
+    def show_invalid_folders(cls, base_path="/lyman/data1/obsdata"):
+        """
+        Generate a concise report showing only problematic observation folders.
+        
+        This is a simplified version of validate_folder_structure() that focuses
+        on identifying and reporting issues without detailed analysis.
+        
+        Parameters:
+        -----------
+        base_path : str
+            Root directory containing telescope unit subdirectories
+            
+        Returns:
+        --------
+        dict : Validation results (same format as validate_folder_structure)
+        """
+        results = cls.validate_folder_structure(base_path, report_only=True)
+        
+        print("\n📋 NON-COMPLIANT FOLDERS REPORT")
+        print("=" * 60)
+        
+        # Report folders with invalid date formats
+        if results['invalid_folders']:
+            print(f"\n❌ INVALID DATE FORMAT ({len(results['invalid_folders'])} folders):")
+            print("   These folders cannot be parsed as observation dates:")
+            for folder in results['invalid_folders']:
+                print(f"     {folder['unit']}/{folder['name']}")
+                for issue in folder['issues']:
+                    print(f"       → {issue}")
+        
+        # Report folders with suspicious suffixes
+        if results['suspicious_folders']:
+            print(f"\n⚠️  SUSPICIOUS SUFFIXES ({len(results['suspicious_folders'])} folders):")
+            print("   These folders have unknown or non-standard suffixes:")
+            for folder in results['suspicious_folders']:
+                print(f"     {folder['unit']}/{folder['name']}")
+                print(f"       → Date: {folder['date']}, Suffix: '{folder['suffix']}'")
+        
+        # Report folders that are too old
+        if results['old_folders']:
+            print(f"\n📅 PRE-SURVEY FOLDERS ({len(results['old_folders'])} folders):")
+            print("   These folders predate the survey start (2023-10-09):")
+            for folder in sorted(results['old_folders'], key=lambda x: x['date']):
+                print(f"     {folder['unit']}/{folder['name']} ({folder['date']})")
+        
+        # Report folders with future dates
+        if results['future_folders']:
+            print(f"\n🔮 FUTURE DATE FOLDERS ({len(results['future_folders'])} folders):")
+            print("   These folders have dates in the future:")
+            for folder in sorted(results['future_folders'], key=lambda x: x['date']):
+                print(f"     {folder['unit']}/{folder['name']} ({folder['date']})")
+        
+        # Show examples of valid folders for reference
+        if results['valid_folders']:
+            print(f"\n✅ VALID FOLDERS (showing first 10 of {len(results['valid_folders'])}):")
+            print("   Examples of properly formatted folders:")
+            for folder in results['valid_folders'][:10]:
+                suffix_info = f" (suffix: {folder['suffix']})" if folder['suffix'] else ""
+                print(f"     {folder['unit']}/{folder['name']}{suffix_info}")
+            
+            if len(results['valid_folders']) > 10:
+                print(f"     ... and {len(results['valid_folders']) - 10} more valid folders")
+        
+        return results
+
+    def get_all_data_paths(self):
+        """Get all data paths for this night across units and settings"""
+        if not self.data_directories:
+            # Fallback to the basic path if no specific directories stored
+            return [self.data_directory]
+        return self.data_directories
+        
+    def find_files_by_unit(self, unit_name):
+        """Find all FITS files for a specific unit on this night"""
+        all_files = []
+        
+        base_path = f"/lyman/data1/obsdata/{unit_name}"
+        if not os.path.exists(base_path):
+            return all_files
+            
+        # Look for directories containing this night's date
+        date_str = self.date.strftime('%Y-%m-%d')
+        
+        for item in os.listdir(base_path):
+            if not item.startswith(date_str):
+                continue
+                
+            # This directory matches our night
+            dir_path = os.path.join(base_path, item)
+            if os.path.isdir(dir_path):
+                # Scan for FITS files
+                for root, _, files in os.walk(dir_path):
+                    for file in files:
+                        if file.endswith('.fits') or file.endswith('.fits.fz'):
+                            all_files.append(os.path.join(root, file))
+                            
+        return all_files
+    
+    def update_celestial_bodies(self):
+        """Update sun and moon information for this night"""
+        try:
+            # Observatory location (Cerro Tololo)
+            location = EarthLocation(
+                lon=-70.7040*u.deg, 
+                lat=-30.1691*u.deg,
+                height=2200*u.m
+            )
+            
+            # Calculate for midnight local time
+            midnight = Time(f"{self.date}T00:00:00") + 0.5  # Add 0.5 day to get to midnight
+            
+            # Get moon position at midnight
+            moon = get_body('moon', midnight, location)
+            sun = get_body('sun', midnight, location)
+            
+            # Calculate moon phase and illumination
+            elongation = sun.separation(moon).rad
+            self.moon_phase = (1 - np.cos(elongation)) / 2
+            self.moon_illumination = 100 * (1 + np.cos(np.pi - elongation)) / 2
+            
+            # Get moon distance
+            self.moon_distance = moon.distance.to(u.km).value
+            
+            # Get moon position in equatorial coordinates
+            self.moon_ra = moon.ra.deg
+            self.moon_dec = moon.dec.deg
+            
+            # Calculate positions throughout the night for max/min altitudes
+            night_start = midnight - 0.25  # 6pm
+            night_end = midnight + 0.25    # 6am
+            times = Time(np.linspace(night_start.jd, night_end.jd, 24))
+            
+            # Get altitudes throughout night
+            altaz_frame = AltAz(obstime=times, location=location)
+            moon_altaz = moon.transform_to(altaz_frame)
+            sun_altaz = sun.transform_to(altaz_frame)
+            
+            self.moon_alt_max = np.max(moon_altaz.alt.deg)
+            self.sun_min_altitude = np.min(sun_altaz.alt.deg)
+            
+            # Calculate sun positions at sunrise/sunset if available
+            if self.sunset and self.sunrise:
+                sunset_time = Time(self.sunset)
+                sunrise_time = Time(self.sunrise)
+                
+                sun_at_set = get_body('sun', sunset_time, location)
+                sun_at_rise = get_body('sun', sunrise_time, location)
+                
+                self.sun_ra_set = sun_at_set.ra.deg
+                self.sun_dec_set = sun_at_set.dec.deg
+                self.sun_ra_rise = sun_at_rise.ra.deg
+                self.sun_dec_rise = sun_at_rise.dec.deg
+            
+            self.save()
+            return True
+            
+        except Exception as e:
+            print(f"Error updating celestial body data: {e}")
+            return False
+
+    def clean(self):
+        """Validate the data_directory exists if provided"""
+        if self.data_directory and not os.path.isdir(self.data_directory):
+            warnings.warn(f"Directory does not exist: {self.data_directory}")
+    
+    def get_unit_data_path(self, unit_name):
+        for variant_key, variant_info in self.directory_variants.get('variants', {}).items():
+            if variant_info.get('unit') == unit_name:
+                return variant_info['path']
+        return None
+
+    def get_paths_by_gain(self, gain_value):
+        """
+        Get paths that explicitly specify the target gain value.
+        For implicit paths, file-level scanning will handle gain detection.
+    
+        Parameters:
+        -----------
+        gain_value : int
+            Target gain value (0 or 2750)
+        
+        Returns:
+        --------
+        list : Paths with explicit gain value in folder name
+        """
+        explicit_paths = []
+    
+        for variant_info in self.directory_variants.get('variants', {}).values():
+            suffix = variant_info.get('suffix', '')
+            path = variant_info.get('path', '')
+        
+            # Only return paths with explicit gain information
+            if f'gain{gain_value}' in suffix:
+                explicit_paths.append(path)
+    
+        return explicit_paths
+
+    def get_too_paths(self):
+        paths = []
+        for variant_info in self.directory_variants.get('variants', {}).values():
+            if 'ToO' in variant_info.get('suffix', ''):
+                paths.append(variant_info['path'])
+        return paths
+
+    def get_all_data_paths(self):
+        """
+        Get all data paths for this night, regardless of metadata completeness.
+        File-level scanning will determine actual gain/binning values.
+    
+        Returns:
+        --------
+        list : All available data paths for this night
+        """
+        all_paths = []
+    
+        for variant_info in self.directory_variants.get('variants', {}).values():
+            path = variant_info.get('path', '')
+            if path and os.path.exists(path):
+                all_paths.append(path)
+    
+        return all_paths
+    
+    @classmethod
+    def status_report(cls):
+        total = cls.objects.count()
+        if total == 0:
+            print("No Night records in database")
+            return
+        
+        earliest = cls.objects.order_by('date').first()
+        latest = cls.objects.order_by('-date').first()
+        
+        print(f"Night records in database: {total}")
+        print(f"Date range: {earliest.date} to {latest.date}")
+        print(f"Recent nights:")
+        for night in cls.objects.order_by('-date')[:5]:
+            print(f"  {night.date}: {len(night.data_directories)} directories")
+
+
+class Tile(models.Model):
+    """
+    Pre-defined 7DS survey tile information.
+
+    e.g., Define the vertices of the polygon
+    from django.contrib.gis.geos import Polygon
+    vertices = Polygon(((149.5, -45.5), (150.5, -45.5), (150.5, -44.5), (149.5, -44.5), (149.5, -45.5)))
+
+    /data/factory/skygrid/skygrid_tiles_7DS.csv
+    #id,ra,dec,tile
+    0,0.0,-90.0,T00000
+
+    PATH: /lyman/data1/obsdata/final_tiles.txt
+    id ra dec ra1 dec1 ra2 dec2 ra3 dec3 ra4 dec4
+    T00000 0.0 -90.0 56.356843984748565 -89.1741958739488 123.64315601525104 -89.1741958739488 236.35684398474896 -89.1741958739488 303.64315601525146 -89.1741958739488
+    T00001 0.0 -89.15094339622642 27.754830576727567 -88.52361237902466 60.33955298027449 -89.20885555083653 299.6604470197255 -89.20885555083653 332.24516942327244 -88.52361237902466
+T00002 51.42857142857143 -89.15094339622642 79.18340200529899 -88.52361237902466 111.76812440884592 -89.20885555083653 351.0
+
+    """
+
+    id = models.IntegerField(primary_key=True)  # Unique tile number and primary key
+    name = models.CharField(max_length=6, unique=True)  # Tile name generated from id
+    ra = models.FloatField()    # Central Right Ascension (0 to 360 degrees)
+    dec = models.FloatField()   # Central Declination (-90 to +90 degrees)
+
+    # Store vertices without SRID specification since we're using celestial coordinates
+    vertices = gis_models.PolygonField(srid=0)  # Use SRID 0 for celestial coordinates
+    
+    # Statistics fields
+    first_observed = models.DateField(null=True, blank=True, help_text="Date first observed")
+    last_observed = models.DateField(null=True, blank=True, help_text="Date last observed")
+    observation_count = models.IntegerField(default=0, help_text="Total number of science frames")
+    total_exposure_time = models.FloatField(default=0, help_text="Total exposure time in seconds")
+    priority = models.IntegerField(default=5, help_text="Observing priority (1=highest, 10=lowest)")
+    survey_program = models.CharField(max_length=50, blank=True, help_text="Survey program this tile belongs to")
+    area_sq_deg = models.FloatField(null=True, blank=True, help_text="Area in square degrees")
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['ra', 'dec']),
+            models.Index(fields=['name']),
+            models.Index(fields=['priority']),
+            models.Index(fields=['first_observed']),
+            models.Index(fields=['last_observed']),
+        ]
+        # Note: Q3C indexes are created in migration files using RunSQL
+
+    def save(self, *args, **kwargs):
+        self.name = f"T{str(self.id).zfill(5)}"
+
+        # Ensure RA is in range [0, 360)
+        self.ra = self.ra % 360.0
+
+        # Ensure Dec is in range [-90, 90]
+        self.dec = max(-90.0, min(90.0, self.dec))
+
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"7DS Tile {self.name} (RA={self.ra:.3f}, Dec={self.dec:.3f})"
+
+    @property
+    def vertex_coords(self):
+        """Return the vertex coordinates as a list of (ra, dec) tuples"""
+        return [(p[0], p[1]) for p in self.vertices[0]]
+
+    def contains_point(self, ra, dec):
+        """
+        Check if a celestial point falls within this tile.
+        Handles RA wrap-around and pole proximity cases.
+        """
+        # Normalize input coordinates
+        ra = ra % 360.0
+        dec = max(-90.0, min(90.0, dec))
+
+        # For points near poles, special handling might be needed
+        if abs(dec) > 88.0:
+            # Near poles, just check declination range
+            vertices = self.vertex_coords
+            dec_min = min(v[1] for v in vertices)
+            dec_max = max(v[1] for v in vertices)
+            return dec_min <= dec <= dec_max
+
+        # Handle RA wrap-around
+        point = Point(ra, dec)
+        if self.crosses_meridian():
+            # Split the polygon at the meridian and check both parts
+            west_poly, east_poly = self.split_at_meridian()
+            return west_poly.contains(point) or east_poly.contains(point)
+
+        return self.vertices.contains(point)
+
+    def crosses_meridian(self):
+        """
+        Check if the polygon crosses the meridian (RA=0).
+        """
+        ra_values = [p[0] for p in self.vertex_coords]
+        return max(ra_values) - min(ra_values) > 180
+
+    def split_at_meridian(self):
+        """
+        Split the polygon at the meridian (RA=0) into two polygons.
+        """
+        vertices = self.vertex_coords
+        west_vertices = []
+        east_vertices = []
+
+        for ra, dec in vertices:
+            if ra > 180:
+                west_vertices.append((ra - 360, dec))
+            else:
+                east_vertices.append((ra, dec))
+
+        west_poly = Polygon(west_vertices)
+        east_poly = Polygon(east_vertices)
+
+        return MultiPolygon(west_poly), MultiPolygon(east_poly)
+
+    @classmethod
+    def load_from_file(cls, file_path):
+        """
+        Load tile information from final_tiles.txt format file.
+        
+        File format:
+        id ra dec ra1 dec1 ra2 dec2 ra3 dec3 ra4 dec4
+        """
+        created = 0
+        updated = 0
+        
+        with open(file_path, 'r') as f:
+            reader = csv.reader(f, delimiter=' ', skipinitialspace=True)
+            # Skip header
+            next(reader)
+            
+            for row in reader:
+                # Skip empty rows
+                if not row:
+                    continue
+                    
+                # Extract tile ID from first column
+                tile_id = int(row[0][1:]) if row[0].startswith('T') else int(row[0])
+                ra = float(row[1])
+                dec = float(row[2])
+                
+                # Extract vertex coordinates
+                vertices = [
+                    (float(row[3]), float(row[4])),  # ra1, dec1
+                    (float(row[5]), float(row[6])),  # ra2, dec2
+                    (float(row[7]), float(row[8])),  # ra3, dec3
+                    (float(row[9]), float(row[10])), # ra4, dec4
+                    (float(row[3]), float(row[4])),  # Close the polygon by repeating first vertex
+                ]
+                
+                # Create polygon
+                polygon = Polygon(vertices)
+                
+                # Create or update tile
+                tile, is_new = cls.objects.update_or_create(
+                    id=tile_id,
+                    defaults={
+                        'ra': ra,
+                        'dec': dec,
+                        'vertices': polygon,
+                        'name': f"T{str(tile_id).zfill(5)}",
+                    }
+                )
+                
+                if is_new:
+                    created += 1
+                else:
+                    updated += 1
+                
+                # Calculate area in square degrees
+                tile.calculate_area()
+                
+        return {'created': created, 'updated': updated, 'total': created + updated}
+
+    @classmethod
+    def q3c_radial_search(cls, ra, dec, radius_deg):
+        """
+        Find tiles using Q3C cone search.
+        
+        Parameters:
+        -----------
+        ra: float
+            Right Ascension in degrees (0-360)
+        dec: float
+            Declination in degrees (-90 to +90)
+        radius_deg: float
+            Search radius in degrees
+        
+        Returns:
+        --------
+        QuerySet of Tile objects that fall within the search circle
+        """
+        # Ensure Q3C extension is enabled
+        with connection.cursor() as cursor:
+            cursor.execute("CREATE EXTENSION IF NOT EXISTS q3c;")
+        
+        # Use Q3C for efficient spatial search
+        return cls.objects.filter(
+            RawSQL("q3c_radial_query(ra, dec, %s, %s, %s)",
+                  [ra, dec, radius_deg],
+                  output_field=BooleanField())
+        )
+    
+    @classmethod
+    def q3c_poly_search(cls, vertices):
+        """
+        Find tiles using Q3C polygon search.
+        
+        Parameters:
+        -----------
+        vertices: list of (ra, dec) tuples
+            Vertices of the search polygon
+            
+        Returns:
+        --------
+        QuerySet of Tile objects that fall within the search polygon
+        """
+        
+        # Ensure Q3C extension is enabled
+        with connection.cursor() as cursor:
+            cursor.execute("CREATE EXTENSION IF NOT EXISTS q3c;")
+        
+        # Create arrays from vertices
+        ra_list = [v[0] for v in vertices]
+        dec_list = [v[1] for v in vertices]
+        
+        # Format arrays for SQL
+        ra_array = "ARRAY[" + ",".join(str(ra) for ra in ra_list) + "]"
+        dec_array = "ARRAY[" + ",".join(str(dec) for dec in dec_list) + "]"
+        
+        # Use Q3C polygon search
+        return cls.objects.filter(
+            RawSQL(f"q3c_poly_query(ra, dec, {ra_array}, {dec_array})",
+                  [],
+                  output_field=BooleanField())
+        )
+    
+    def calculate_area(self):
+        """Calculate the area of this tile in square degrees"""
+        # This is approximate since we're on a sphere
+        vertices = self.vertex_coords
+        if not vertices:
+            return 0
+            
+        # Calculate area using spherical geometry
+        ra_values = [v[0] for v in vertices]
+        dec_values = [v[1] for v in vertices]
+        
+        width = max(ra_values) - min(ra_values)
+        height = max(dec_values) - min(dec_values)
+        
+        # Special case for polygons that cross the meridian
+        if width > 180:
+            # Adjust width calculation for meridian crossing
+            ra_sorted = sorted(ra_values)
+            width = 360 - (ra_sorted[-1] - ra_sorted[0])
+        
+        # Adjust for cosine of declination (spherical correction)
+        avg_dec = sum(dec_values) / len(dec_values)
+        width_corrected = width * np.cos(np.radians(abs(avg_dec)))
+        
+        self.area_sq_deg = width_corrected * height
+        self.save(update_fields=['area_sq_deg'])
+        return self.area_sq_deg
+
+
+class Target(models.Model):
+    """
+    Target model for non-tile observations (TOO, calibration targets, etc.)
+    """
+    name = models.CharField(max_length=100, unique=True, help_text="Target designation")
+    ra = models.FloatField(help_text="Right Ascension in degrees")
+    dec = models.FloatField(help_text="Declination in degrees")
+    
+    # Target classification
+    TARGET_TYPE_CHOICES = [
+        ('TOO', 'Target of Opportunity'),
+        ('STD', 'Standard Star'),
+        ('EXSCI', 'Third-Party Science Target'),
+        ('TEST', 'Test Target'),
+    ]
+    target_type = models.CharField(
+        max_length=10,
+        choices=TARGET_TYPE_CHOICES,
+        default='EXSCI',
+        help_text="Type of target"
+    )
+    
+    # Optional additional information
+    description = models.TextField(blank=True, help_text="Target description")
+    
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['name']
+        indexes = [
+            models.Index(fields=['name']),
+            models.Index(fields=['ra', 'dec']),
+            models.Index(fields=['target_type']),
+        ]
+    
+    def __str__(self):
+        return f"{self.name} ({self.target_type})"
+    
+    @property
+    def coordinates_str(self):
+        """Human-readable coordinates string."""
+        try:
+            from astropy.coordinates import SkyCoord
+            import astropy.units as u
+            coord = SkyCoord(ra=self.ra*u.degree, dec=self.dec*u.degree)
+            return coord.to_string('hmsdms')
+        except:
+            return f"RA: {self.ra:.6f}°, Dec: {self.dec:.6f}°"
+    
+    @classmethod
+    def create_from_coordinates(cls, name, ra, dec, target_type='SCI', **kwargs):
+        """Create target from RA/Dec coordinates."""
+        target, created = cls.objects.get_or_create(
+            name=name,
+            defaults={
+                'ra': ra,
+                'dec': dec,
+                'target_type': target_type,
+                **kwargs
+            }
+        )
+        return target, created
+
+
+class UnitStatistics(models.Model):
+    """
+    Statistics tracking for each telescope unit.
+    
+    This model tracks observation statistics for each Unit across all time,
+    providing insights into telescope usage and productivity.
+    """
+    unit = models.OneToOneField(Unit, on_delete=models.CASCADE, related_name='statistics')
+    
+    # Time range of observations
+    first_observation = models.DateTimeField(null=True, blank=True)
+    last_observation = models.DateTimeField(null=True, blank=True)
+    
+    # Frame counts
+    bias_frame_count = models.IntegerField(default=0) 
+    dark_frame_count = models.IntegerField(default=0)
+    flat_frame_count = models.IntegerField(default=0)
+    science_frame_count = models.IntegerField(default=0)
+    
+    # Science statistics
+    total_exptime = models.FloatField(default=0, help_text="Total science exposure time in seconds")
+    distinct_tiles_observed = models.IntegerField(default=0, help_text="Number of distinct tiles observed")
+    distinct_nights = models.IntegerField(default=0, help_text="Number of distinct nights used")
+    
+    # Updated timestamp
+    last_updated = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"Statistics for {self.unit.name}"
+    
+    def update_statistics(self):
+        """Update all statistics for this unit"""
+        
+        # Get time range
+        times = ScienceFrame.objects.filter(unit=self.unit).aggregate(
+            first=Min('obstime'),
+            last=Max('obstime')
+        )
+        self.first_observation = times['first']
+        self.last_observation = times['last']
+        
+        # Frame counts
+        self.bias_frame_count = BiasFrame.objects.filter(unit=self.unit).count()
+        self.dark_frame_count = DarkFrame.objects.filter(unit=self.unit).count()
+        self.flat_frame_count = FlatFrame.objects.filter(unit=self.unit).count()
+        
+        # Science frame statistics
+        science_stats = ScienceFrame.objects.filter(unit=self.unit).aggregate(
+            count=Count('id'),
+            exptime=Sum('exptime'),
+            tiles=Count('tile', distinct=True),
+            nights=Count('night', distinct=True)
+        )
+        
+        self.science_frame_count = science_stats['count'] or 0
+        self.total_exposure_time = science_stats['exptime'] or 0
+        self.distinct_tiles_observed = science_stats['tiles'] or 0
+        self.distinct_nights = science_stats['nights'] or 0
+        
+        self.save()
+    
+    @property
+    def science_frames_by_filter(self):
+        """Get count of science frames by filter"""
+        
+        return ScienceFrame.objects.filter(unit=self.unit).values('filter__name').annotate(
+            frame_count=Count('id')
+        ).order_by('filter__name')
+    
+    @property
+    def frames_by_night(self):
+        """Get count of all frames by night"""
+        
+        science = ScienceFrame.objects.filter(unit=self.unit).values(
+            'night__date').annotate(frame_count=Count('id'))
+        bias = BiasFrame.objects.filter(unit=self.unit).values(
+            'night__date').annotate(frame_count=Count('id'))
+        dark = DarkFrame.objects.filter(unit=self.unit).values(
+            'night__date').annotate(frame_count=Count('id'))
+        flat = FlatFrame.objects.filter(unit=self.unit).values(
+            'night__date').annotate(frame_count=Count('id'))
+        
+        # Combine results
+        nights = {}
+        for item in science:
+            night = item['night__date']
+            if night not in nights:
+                nights[night] = {'science': 0, 'bias': 0, 'dark': 0, 'flat': 0}
+            nights[night]['science'] = item['frame_count']
+            
+        for item in bias:
+            night = item['night__date']
+            if night not in nights:
+                nights[night] = {'science': 0, 'bias': 0, 'dark': 0, 'flat': 0}
+            nights[night]['bias'] = item['frame_count']
+            
+        for item in dark:
+            night = item['night__date']
+            if night not in nights:
+                nights[night] = {'science': 0, 'bias': 0, 'dark': 0, 'flat': 0}
+            nights[night]['dark'] = item['frame_count']
+            
+        for item in flat:
+            night = item['night__date']
+            if night not in nights:
+                nights[night] = {'science': 0, 'bias': 0, 'dark': 0, 'flat': 0}
+            nights[night]['flat'] = item['frame_count']
+            
+        return nights
+
+
+class FilenamePatternAnalyzer:
+    """
+    Complete utility class for analyzing astronomical observation filename patterns.
+    
+    Supports all filename patterns found in the 7DT system:
+    1. New format (Tile): 7DT01_20250521_070659_T11746_i_1x1_100.0s_0000.fits
+    2. New format (Target): 7DT01_20240826_020023_GRB240825A_m425_1x1_100.0s_0002.fits
+    3. New format (Target with shift): 7DT01_20240722_012512_NGC6121_shift_m425_1x1_100.0s_0001.fits
+    4. Old format v2 (with unit): 7DT01_LIGHT_COSMOS_2024-03-11_02-09-07_m675_2x2_120.00s_0005.fits
+    5. Old format v2 (with object number): 7DT01_LIGHT_COSMOS_2_2024-05-27_21-08-01_m425_1x1_120.00s_0015.fits
+    6. Old format v1 (original): LIGHT_FOCUS7522__WD0123-262_2023-11-02_01-29-23_u_60.00s_0091.fits
+    7. Old format v1 (FOCUS with complex objects): LIGHT_FOCUS7524__Gcluster_Shim_2024-01-04_23-45-26_m675_60.00s_0072.fits
+    8. Old format v1 (simple): LIGHT_Feige110_2023-10-11_23-31-11_i_30.00s_0009.fits
+    9. Old format v1 (FOCUS calibration): DARK_FOCUS7446___2024-01-10_05-16-45_u_10.00s_0002.fits
+    10. Old format v1 (focustest): LIGHT_focustest_NGC1980_2023-10-12_04-46-05_u_6.00s_0007.fits
+    11. Old format v1 (empty object): BIAS__2023-10-11_20-42-45_u_0.00s_0009.fits
+    12. Old format v0 (with object): ObjectName_2023-10-12_03-01-14_r_-9.82_60.00s_0021.fits
+    13. Old format v0 (calibration): DARK_2023-10-11_20-51-11__-9.82_60.00s_0017.fits
+    14. Old format v0 (temperature): 2024-12-23_01-23-58_g_-9.83_100.00s_0000.fits
+    15. Old format v0 (LTT standard): LTT1020_2023-10-11_02-58-48_u_$$$$_60.00s_0000.fits
+    16. New unit-timestamp format: 7DT01-20240527-061352-M107-m400-10.0s-0000.fits
+    17. New unit-extended format: 7DT01_LIGHT_Serpens_main_2024-05-09_02-22-26_m400_1x1_120.00s_0000.fits
+    """
+    
+    # Pattern for new FITS filename format (handles all new format variations)
+    NEW_FITS_PATTERN = re.compile(
+        r'^(7DT\d+)_(\d{8})_(\d{6})_([^_]+(?:_[^_]+)*)_([a-zA-Z]+\d*[a-zA-Z]*|m\d+[a-zA-Z]*|FLAT)_(\d+x\d+)_(\d+\.?\d*)s_(\d{4})\.fits(?:\.fz)?$'
+    )
+
+    # Pattern for old format v2 (unified pattern for all v2 variations)
+    OLD_V2_FITS_PATTERN = re.compile(
+        r'^(7DT\d+)_(LIGHT|DARK|BIAS|FLAT)_([^_]*(?:_\d+)?)_(\d{4}-\d{2}-\d{2})_(\d{2}-\d{2}-\d{2})_([a-zA-Z]+\d*|m\d+[a-zA-Z]*)_(?:(\d+x\d+)_)?(\d+\.?\d*)s_(\d{4})\.fits(?:\.fz)?$'
+    )
+    
+    # Pattern for FlatWizard files (v2 variant - automated flat field acquisition)
+    FLATWIZARD_PATTERN = re.compile(
+        r'^(7DT\d+)_FLAT_FlatWizard_(\d{4}-\d{2}-\d{2})_(\d{2}-\d{2}-\d{2})_([^_]+)_(?:(\d+x\d+)_)?(\d+\.?\d*)s_(\d{4})\.fits(?:\.fz)?$'
+    )
+    
+    # ENHANCED Pattern for old format v1 - handles complex objects with double underscore
+    OLD_V1_FITS_PATTERN = re.compile(
+        r'^(LIGHT|DARK|BIAS|FLAT)_((?:FOCUS\d+|[^_]+(?:_\d+)?))__([^_]+(?:_[^_]+)*)_(\d{4}-\d{2}-\d{2})_(\d{2}-\d{2}-\d{2})_([a-zA-Z]+\d*|m\d+)_(\d+\.?\d*)s_(\d{4})\.fits(?:\.fz)?$'
+    )
+    
+    # NEW Pattern for FOCUS calibration files with triple underscore and empty object field
+    OLD_V1_FOCUS_CALIB_PATTERN = re.compile(
+        r'^(LIGHT|DARK|BIAS|FLAT)_(FOCUS\d+)___(\d{4}-\d{2}-\d{2})_(\d{2}-\d{2}-\d{2})_([a-zA-Z]+\d*|m\d+)_(\d+\.?\d*)s_(\d{4})\.fits(?:\.fz)?$'
+    )
+    
+    # NEW Pattern for focustest files
+    OLD_V1_FOCUSTEST_PATTERN = re.compile(
+        r'^(LIGHT|DARK|BIAS|FLAT)_(focustest)_([^_]+)_(\d{4}-\d{2}-\d{2})_(\d{2}-\d{2}-\d{2})_([a-zA-Z]+\d*|m\d+)_(\d+\.?\d*)s_(\d{4})\.fits(?:\.fz)?$'
+    )
+    
+    # NEW Pattern for empty object field (BIAS/DARK with double underscore)
+    OLD_V1_EMPTY_OBJECT_PATTERN = re.compile(
+        r'^(BIAS|DARK)__(\d{4}-\d{2}-\d{2})_(\d{2}-\d{2}-\d{2})_([a-zA-Z]+\d*|m\d+)_(\d+\.?\d*)s_(\d{4})\.fits(?:\.fz)?$'
+    )
+    
+    # Fix for Object+Number patterns - update OLD_V1_SIMPLE_PATTERN
+    OLD_V1_SIMPLE_PATTERN = re.compile(
+        r'^(LIGHT|DARK|BIAS|FLAT)_([^_]+(?:_\d+)?)_(\d{4}-\d{2}-\d{2})_(\d{2}-\d{2}-\d{2})_([a-zA-Z]+\d*|m\d+)_(\d+\.?\d*)s_(\d{4})\.fits(?:\.fz)?$'
+    )
+    
+    # NEW Pattern for unit-timestamp format (hyphen separated)
+    NEW_UNIT_TIMESTAMP_PATTERN = re.compile(
+        r'^(7DT\d+)-(\d{8})-(\d{6})-([^-]+)-([^-]+)-(\d+\.?\d*)s-(\d{4})\.fits(?:\.fz)?$'
+    )
+    
+    # NEW Pattern for extended unit format with LIGHT keyword
+    NEW_UNIT_EXTENDED_PATTERN = re.compile(
+        r'^(7DT\d+)_LIGHT_([^_]+(?:_[^_]+)*)_(\d{4}-\d{2}-\d{2})_(\d{2}-\d{2}-\d{2})_([^_]+)_(\d+x\d+)_(\d+\.?\d*)s_(\d{4})\.fits(?:\.fz)?$'
+    )
+    
+    # Pattern for very early format with temperature (v0)
+    OLD_V0_FITS_PATTERN = re.compile(
+        r'^([^_]+)_(\d{4}-\d{2}-\d{2})_(\d{2}-\d{2}-\d{2})_([a-zA-Z]+\d*|m\d+)_(-?\d+\.?\d*)_(\d+\.?\d*)s_([^.]+)\.fits(?:\.fz)?$'
+    )
+    
+    OLD_V0_CALIB_PATTERN = re.compile(
+        r'^(BIAS|DARK|FLAT)_(\d{4}-\d{2}-\d{2})_(\d{2}-\d{2}-\d{2})__(-?\d+\.?\d*)_(\d+\.?\d*)s_([^.]+)\.fits(?:\.fz)?$'
+    )
+
+    # Pattern for early temperature format without object name (direct date start)
+    OLD_V0_TEMPERATURE_PATTERN = re.compile(
+        r'^(\d{4}-\d{2}-\d{2})_(\d{2}-\d{2}-\d{2})_([a-zA-Z]+\d*)_(-?\d+\.?\d*)_(\d+\.?\d*)s_(\d{4})\.fits(?:\.fz)?$'
+    )
+
+    # Pattern for LTT standard star observations with $$$$ placeholder
+    OLD_V0_LTT_PATTERN = re.compile(
+        r'^(LTT\d+)_(\d{4}-\d{2}-\d{2})_(\d{2}-\d{2}-\d{2})_([a-zA-Z]+\d*)_(\$\$\$\$)_(\d+\.?\d*)s_(\d{4})\.fits(?:\.fz)?$'
+    )
+
+    def __init__(self, input_value):
+        """Initialize with filename string."""
+        self._date_obj = None
+        self._parsed_filename = None
+        self._filename_pattern = None
+        self._original_input = input_value
+        
+        if isinstance(input_value, str):
+            self._parse_from_string(input_value)
+        elif isinstance(input_value, datetime.date):
+            self._date_obj = input_value
+        elif isinstance(input_value, datetime.datetime):
+            self._date_obj = input_value.date()
+    
+    @property
+    def date(self):
+        """Return the parsed date object."""
+        return self._date_obj
+    
+    @property
+    def filename_pattern(self):
+        """Return the identified filename pattern type."""
+        return self._filename_pattern
+    
+    @property
+    def parsed_filename(self):
+        """Return the parsed filename components as a dictionary."""
+        return self._parsed_filename
+
+    def _parse_from_string(self, input_string):
+        """Enhanced parsing with FlatWizard pattern support."""
+        basename = os.path.basename(input_string)
+        
+        # Try new FITS filename pattern first
+        if self._try_new_format(basename):
+            return
+
+        # Try old format v2 (includes regular v2 and FlatWizard)
+        if self._try_old_v2_format(basename):
+            return
+        
+        # Try old format v1 patterns (multiple variations, ordered by specificity)
+        if self._try_old_v1_patterns(basename):
+            return
+        
+        # Try old v0 patterns
+        if self._try_old_v0_patterns(basename):
+            return
+        
+        # If we reach here, we couldn't parse the filename
+        raise ValueError(f"Could not parse date from '{input_string}'")
+    
+    def _try_flatwizard_format(self, basename):
+        """Try FlatWizard format - automated flat field acquisition."""
+        match = self.FLATWIZARD_PATTERN.match(basename)
+        if not match:
+            return False
+        
+        self._filename_pattern = 'flatwizard'
+        self._parsed_filename = {
+            'pattern': 'flatwizard',
+            'unit': match.group(1),
+            'frame_type': 'FLAT',
+            'object_name': 'FlatWizard',
+            'date': match.group(2),
+            'time': match.group(3),
+            'filter': match.group(4),
+            'exptime': match.group(5),
+            'sequence': match.group(6),
+            'binning': '1x1',  # Default for FlatWizard
+            'is_automated': True,
+            'is_calibration': True,
+            'acquisition_method': 'automated',
+            'full_filename': basename
+        }
+        
+        date_str = match.group(2)
+        try:
+            self._date_obj = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+            return True
+        except ValueError:
+            return False
+
+    def _try_new_format(self, basename):
+        """Try all new FITS filename format (unified as new_fits)."""
+        new_match = self.NEW_FITS_PATTERN.match(basename)
+        if  new_match:
+            self._filename_pattern = 'new_fits'
+            object_info = new_match.group(4)
+        
+            # Parse target information
+            if object_info.startswith('T') and len(object_info) > 1 and object_info[1:].isdigit():
+                observation_type = 'tile'
+                tile_id = object_info[1:]
+                object_name = None
+                modifier = None
+            elif '_' in object_info:
+                parts = object_info.split('_')
+                observation_type = 'target'
+                tile_id = None
+                object_name = parts[0]
+                modifier = '_'.join(parts[1:])
+            else:
+                observation_type = 'target'
+                tile_id = None
+                object_name = object_info
+                modifier = None
+        
+            self._parsed_filename = {
+                'pattern': 'new_fits',
+                'pattern_variant': 'standard',
+                'unit': new_match.group(1),
+                'date': new_match.group(2),
+                'time': new_match.group(3),
+                'object_info': object_info,
+                'observation_type': observation_type,
+                'tile_id': tile_id,
+                'object_name': object_name,
+                'modifier': modifier,
+                'filter': new_match.group(5),
+                'binning': new_match.group(6),
+                'exptime': new_match.group(7),
+                'sequence': new_match.group(8),
+                'full_filename': basename
+            }
+        
+            # Convert YYYYMMDD to datetime
+            date_str = new_match.group(2)
+            try:
+                self._date_obj = datetime.datetime.strptime(date_str, '%Y%m%d').date()
+                return True
+            except ValueError:
+                return False
+   
+        # 2. Try unit-timestamp format
+        timestamp_match = self.NEW_UNIT_TIMESTAMP_PATTERN.match(basename)
+        if timestamp_match:
+            self._filename_pattern = 'new_fits' #'new_unit_timestamp'
+        
+            self._parsed_filename = {
+                'pattern': 'new_fits', #'new_unit_timestamp',
+                'pattern_variant': 'unit_timestamp',
+                'unit': timestamp_match.group(1),
+                'date': timestamp_match.group(2),
+                'time': timestamp_match.group(3),
+                'object_name': timestamp_match.group(4),
+                'object_info': timestamp_match.group(4),
+                'observation_type': 'target',
+                'tile_id': None,
+                'modifier': None,
+                'filter': timestamp_match.group(5),
+                'exptime': timestamp_match.group(6),
+                'sequence': timestamp_match.group(7),
+                'binning': '1x1',  # Default
+                'full_filename': basename
+            }
+     
+            # Convert YYYYMMDD to datetime
+            date_str = timestamp_match.group(2)
+            try:
+                self._date_obj = datetime.datetime.strptime(date_str, '%Y%m%d').date()
+                return True
+            except ValueError:
+                return False
+
+        # 3. Try unit-extended format
+        extended_match = self.NEW_UNIT_EXTENDED_PATTERN.match(basename)
+        if extended_match:
+            self._filename_pattern = 'new_fits'
+
+            object_name = extended_match.group(2)
+        
+            self._parsed_filename = {
+                'pattern': 'new_fits',
+                'pattern_variant': 'unit_extended',
+                'unit': extended_match.group(1),
+                'frame_type': 'LIGHT',
+                'object_name': object_name,
+                'object_info': object_name,
+                'observation_type': 'target',
+                'tile_id': None,
+                'modifier': None,
+                'date': extended_match.group(3),
+                'time': extended_match.group(4),
+                'filter': extended_match.group(5),
+                'binning': extended_match.group(6),
+                'exptime': extended_match.group(7),
+                'sequence': extended_match.group(8),
+                'full_filename': basename
+            }
+
+            # Convert YYYY-MM-DD to datetime
+            date_str = extended_match.group(3)
+            try:
+                self._date_obj = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+                return True
+            except ValueError:
+                return False
+
+        return False 
+ 
+    def _try_old_v2_format(self, basename):
+        """Try old format v2 - includes regular v2 and FlatWizard patterns."""
+
+        # First try FlatWizard pattern (specific v2 variant)
+        flatwizard_match = self.FLATWIZARD_PATTERN.match(basename)
+        if flatwizard_match:
+            self._filename_pattern = 'old_v2_fits'
+            self._parsed_filename = {
+                'pattern': 'old_v2_fits',
+                'pattern_variant': 'flatwizard',
+                'unit': flatwizard_match.group(1),
+                'frame_type': 'FLAT',
+                'object_name': 'FlatWizard',
+                'date': flatwizard_match.group(2),
+                'time': flatwizard_match.group(3),
+                'filter': flatwizard_match.group(4),
+                'binning': flatwizard_match.group(5) if flatwizard_match.group(5) else '1x1',
+                'exptime': flatwizard_match.group(6),
+                'sequence': flatwizard_match.group(7),
+                'is_automated': True,
+                'is_calibration': True,
+                'acquisition_method': 'automated',
+                'has_object_number': False,
+                'full_filename': basename
+            }
+            
+            date_str = flatwizard_match.group(2)
+            try:
+                self._date_obj = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+                return True
+            except ValueError:
+                return False
+
+        # Then try regular old v2 pattern
+        old_v2_match = self.OLD_V2_FITS_PATTERN.match(basename)
+        if old_v2_match:
+            self._filename_pattern = 'old_v2_fits'
+            
+            # Parse object name and detect if it has a number suffix
+            object_field = old_v2_match.group(3)
+            has_object_number = False
+            object_name = object_field
+            object_number = None
+            
+            # Check if object field ends with underscore + number
+            if object_field and '_' in object_field:
+                parts = object_field.rsplit('_', 1)
+                if len(parts) == 2 and parts[1].isdigit():
+                    has_object_number = True
+                    object_name = object_field  # Keep full name
+                    object_number = parts[1]
+            
+            self._parsed_filename = {
+                'pattern': 'old_v2_fits',
+                'pattern_variant': 'standard',
+                'unit': old_v2_match.group(1),
+                'frame_type': old_v2_match.group(2),
+                'object_name': object_name if object_name else None,
+                'object_number': object_number,
+                'has_object_number': has_object_number,
+                'date': old_v2_match.group(4),
+                'time': old_v2_match.group(5),
+                'filter': old_v2_match.group(6),
+                'binning': old_v2_match.group(7) if old_v2_match.group(7) else '1x1',
+                'exptime': old_v2_match.group(8),
+                'sequence': old_v2_match.group(9),
+                'is_automated': False,
+                'full_filename': basename
+            }
+            
+            # Convert YYYY-MM-DD to datetime
+            date_str = old_v2_match.group(4)
+            try:
+                self._date_obj = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+                return True
+            except ValueError:
+                return False
+        
+        return False
+    
+    def _try_old_v1_patterns(self, basename):
+        """Try all OLD_V1 pattern variations in order of specificity."""
+        
+        # 1. Try FOCUS calibration pattern first (triple underscore, no object)
+        focus_calib_match = self.OLD_V1_FOCUS_CALIB_PATTERN.match(basename)
+        if focus_calib_match:
+            self._filename_pattern = 'old_v1_fits'
+            
+            focus_identifier = focus_calib_match.group(2)
+            
+            self._parsed_filename = {
+                'pattern': 'old_v1_fits',
+                'frame_type': focus_calib_match.group(1),
+                'focus_or_object': focus_identifier,
+                'object_name': None,  # No object name for this pattern
+                'date': focus_calib_match.group(3),
+                'time': focus_calib_match.group(4),
+                'filter': focus_calib_match.group(5),
+                'exptime': focus_calib_match.group(6),
+                'sequence': focus_calib_match.group(7),
+                'binning': '1x1',  # Default for v1
+                'full_filename': basename,
+                'is_focus_test': False,
+                'is_focus_pattern': True,
+                'is_focus_calibration': True,
+                'has_object_number': False,
+                'empty_object_field': True,
+                'pattern_variation': 'focus_calibration_triple_underscore'
+            }
+            
+            date_str = focus_calib_match.group(3)
+            try:
+                self._date_obj = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+                return True
+            except ValueError:
+                return False
+        
+        # 2. Try focustest pattern
+        focustest_match = self.OLD_V1_FOCUSTEST_PATTERN.match(basename)
+        if focustest_match:
+            self._filename_pattern = 'old_v1_fits'
+            
+            self._parsed_filename = {
+                'pattern': 'old_v1_fits',
+                'frame_type': focustest_match.group(1),
+                'focus_or_object': 'focustest',
+                'object_name': focustest_match.group(3),
+                'date': focustest_match.group(4),
+                'time': focustest_match.group(5),
+                'filter': focustest_match.group(6),
+                'exptime': focustest_match.group(7),
+                'sequence': focustest_match.group(8),
+                'binning': '1x1',
+                'full_filename': basename,
+                'is_focus_test': True,
+                'is_focus_pattern': False,
+                'is_focus_calibration': False,
+                'has_object_number': False,
+                'empty_object_field': False,
+                'pattern_variation': 'focustest'
+            }
+            
+            date_str = focustest_match.group(4)
+            try:
+                self._date_obj = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+                return True
+            except ValueError:
+                return False
+        
+        # 3. Try empty object pattern (BIAS/DARK with double underscore)
+        empty_obj_match = self.OLD_V1_EMPTY_OBJECT_PATTERN.match(basename)
+        if empty_obj_match:
+            self._filename_pattern = 'old_v1_fits'
+            
+            self._parsed_filename = {
+                'pattern': 'old_v1_fits',
+                'frame_type': empty_obj_match.group(1),
+                'focus_or_object': None,
+                'object_name': None,
+                'date': empty_obj_match.group(2),
+                'time': empty_obj_match.group(3),
+                'filter': empty_obj_match.group(4),
+                'exptime': empty_obj_match.group(5),
+                'sequence': empty_obj_match.group(6),
+                'binning': '1x1',
+                'full_filename': basename,
+                'is_focus_test': False,
+                'is_focus_pattern': False,
+                'is_focus_calibration': False,
+                'has_object_number': False,
+                'empty_object_field': True,
+                'pattern_variation': 'empty_object_double_underscore'
+            }
+            
+            date_str = empty_obj_match.group(2)
+            try:
+                self._date_obj = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+                return True
+            except ValueError:
+                return False
+        
+        # 4. Try the complex pattern (FOCUS+number with double underscore and object)
+        old_v1_match = self.OLD_V1_FITS_PATTERN.match(basename)
+        if old_v1_match:
+            self._filename_pattern = 'old_v1_fits'
+            
+            focus_or_object = old_v1_match.group(2)
+            object_name = old_v1_match.group(3)
+            
+            # Detect if this is a FOCUS pattern
+            is_focus_pattern = focus_or_object.startswith('FOCUS') and focus_or_object[5:].isdigit()
+            is_focus_test = focus_or_object == 'focustest'
+            has_object_number = False
+            
+            # Check for object with number (e.g., "NGC1566_20")
+            if focus_or_object and '_' in focus_or_object and not is_focus_pattern:
+                parts = focus_or_object.rsplit('_', 1)
+                if len(parts) == 2 and parts[1].isdigit():
+                    has_object_number = True
+                    object_name = focus_or_object  # Full name including number
+            
+            self._parsed_filename = {
+                'pattern': 'old_v1_fits',
+                'frame_type': old_v1_match.group(1),
+                'focus_or_object': focus_or_object,
+                'object_name': object_name,
+                'date': old_v1_match.group(4),
+                'time': old_v1_match.group(5),
+                'filter': old_v1_match.group(6),
+                'exptime': old_v1_match.group(7),
+                'sequence': old_v1_match.group(8),
+                'binning': '1x1',  # Default for v1
+                'full_filename': basename,
+                'is_focus_test': is_focus_test,
+                'is_focus_pattern': is_focus_pattern,
+                'is_focus_calibration': False,
+                'has_object_number': has_object_number,
+                'empty_object_field': not object_name,
+                'pattern_variation': 'complex_with_double_underscore'
+            }
+            
+            date_str = old_v1_match.group(4)
+            try:
+                self._date_obj = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+                return True
+            except ValueError:
+                return False
+        
+        # 5. Try the simple 7-part pattern
+        simple_match = self.OLD_V1_SIMPLE_PATTERN.match(basename)
+        if simple_match:
+            self._filename_pattern = 'old_v1_fits'
+            
+            object_name = simple_match.group(2)
+            
+            self._parsed_filename = {
+                'pattern': 'old_v1_fits',
+                'frame_type': simple_match.group(1),
+                'focus_or_object': object_name,
+                'object_name': object_name,
+                'date': simple_match.group(3),
+                'time': simple_match.group(4),
+                'filter': simple_match.group(5),
+                'exptime': simple_match.group(6),
+                'sequence': simple_match.group(7),
+                'binning': '1x1',
+                'full_filename': basename,
+                'is_focus_test': False,
+                'is_focus_pattern': False,
+                'is_focus_calibration': False,
+                'has_object_number': False,
+                'empty_object_field': False,
+                'pattern_variation': 'simple_7_part'
+            }
+            
+            date_str = simple_match.group(3)
+            try:
+                self._date_obj = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+                return True
+            except ValueError:
+                return False
+        
+        return False
+    
+    def _try_old_v0_patterns(self, basename):
+        """Try OLD_V0 pattern variations (early format with temperature)."""
+        
+        # 1. Try original v0 pattern (object_date_time_filter_temp_exptime_sequence)
+        old_v0_match = self.OLD_V0_FITS_PATTERN.match(basename)
+        if old_v0_match:
+            self._filename_pattern = 'old_v0_fits'
+            self._parsed_filename = {
+                'pattern': 'old_v0_fits',
+                'frame_type': 'LIGHT',  # Assumed for old v0
+                'object_name': old_v0_match.group(1),
+                'date': old_v0_match.group(2),
+                'time': old_v0_match.group(3),
+                'filter': old_v0_match.group(4),
+                'temperature': float(old_v0_match.group(5)),
+                'exptime': old_v0_match.group(6),
+                'sequence': old_v0_match.group(7),
+                'binning': '1x1',
+                'full_filename': basename,
+                'has_temperature': True,
+                'pattern_variation': 'old_v0_with_object'
+            }
+            
+            date_str = old_v0_match.group(2)
+            try:
+                self._date_obj = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+                return True
+            except ValueError:
+                return False
+        
+        # 2. Try v0 calibration pattern
+        old_v0_calib_match = self.OLD_V0_CALIB_PATTERN.match(basename)
+        if old_v0_calib_match:
+            self._filename_pattern = 'old_v0_fits'
+            sequence = old_v0_calib_match.group(6)
+            if sequence == '$$FRAMENR$':
+                sequence = '0000'
+            
+            self._parsed_filename = {
+                'pattern': 'old_v0_fits',
+                'frame_type': old_v0_calib_match.group(1).upper(),
+                'object_name': None,
+                'date': old_v0_calib_match.group(2),
+                'time': old_v0_calib_match.group(3),
+                'filter': None,
+                'temperature': float(old_v0_calib_match.group(4)),
+                'exptime': old_v0_calib_match.group(5),
+                'sequence': sequence,
+                'binning': '1x1',
+                'full_filename': basename,
+                'has_temperature': True,
+                'pattern_variation': 'old_v0_calibration'
+            }
+            
+            date_str = old_v0_calib_match.group(2)
+            try:
+                self._date_obj = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+                return True
+            except ValueError:
+                return False
+
+        # 3. NEW: Try temperature format without object (date_time_filter_temp_exptime_sequence)
+        temp_match = self.OLD_V0_TEMPERATURE_PATTERN.match(basename)
+        if temp_match:
+            self._filename_pattern = 'old_v0_fits'
+        
+            self._parsed_filename = {
+                'pattern': 'old_v0_fits',
+                'frame_type': 'LIGHT',  # Assumed for temperature format
+                'object_name': None,  # No object name in this format
+                'date': temp_match.group(1),
+                'time': temp_match.group(2),
+                'filter': temp_match.group(3),
+                'temperature': float(temp_match.group(4)),
+                'exptime': temp_match.group(5),
+                'sequence': temp_match.group(6),
+                'binning': '1x1',
+                'full_filename': basename,
+                'has_temperature': True,
+                'pattern_variation': 'old_v0_temperature_format'
+            }
+        
+            date_str = temp_match.group(1)
+            try:
+                self._date_obj = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+                return True
+            except ValueError:
+                return False
+
+        # 4. NEW: Try LTT standard star pattern with $$$$ placeholder
+        ltt_match = self.OLD_V0_LTT_PATTERN.match(basename)
+        if ltt_match:
+            self._filename_pattern = 'old_v0_fits'
+        
+            self._parsed_filename = {
+                'pattern': 'old_v0_fits',
+                'frame_type': 'LIGHT',  # LTT observations are science frames
+                'object_name': ltt_match.group(1),  # LTT standard star name
+                'date': ltt_match.group(2),
+                'time': ltt_match.group(3),
+                'filter': ltt_match.group(4),
+                'temperature': None,  # $$$$ placeholder - no actual temperature
+                'exptime': ltt_match.group(6),
+                'sequence': ltt_match.group(7),
+                'binning': '1x1',
+                'full_filename': basename,
+                'has_temperature': False,  # $$$$ is placeholder, not real temperature
+                'is_standard_star': True,
+                'pattern_variation': 'old_v0_ltt_standard'
+            }
+        
+            date_str = ltt_match.group(2)
+            try:
+                self._date_obj = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+                return True
+            except ValueError:
+                return False
+        
+        return False
+
+    @classmethod
+    def analyze_directory_patterns(cls, directory_path):
+        """
+        Analyze all FITS files in a directory to identify filename patterns.
+        Enhanced to include FlatWizard pattern analysis.
+        """
+        # Core pattern types - add flatwizard
+        all_patterns = ['new_fits', 'flatwizard', 'old_v2_fits', 'old_v1_fits', 'old_v0_fits', 'unparseable']
+        
+        # Initialize enhanced statistics
+        stats = {
+            'pattern_counts': {pattern: 0 for pattern in all_patterns},
+            'pattern_variations': {
+                'old_v1_complex_with_double_underscore': 0,
+                'old_v1_simple_7_part': 0,
+                'old_v1_focus_patterns': 0,
+                'old_v1_focus_calibrations': 0,
+                'old_v2_with_object_numbers': 0,
+                'flatwizard_automated': 0
+            },
+            'date_range': {'earliest': None, 'latest': None},
+            'total_files_scanned': 0,
+            'units_found': set(),
+            'filters_found': set(),
+            'special_cases': {
+                'focus_tests': 0,
+                'focus_patterns': 0,
+                'focus_calibrations': 0,
+                'shift_observations': 0,
+                'object_numbers': 0,
+                'empty_objects': 0,
+                'automated_flats': 0
+            }
+        }
+        
+        # Initialize example lists for each pattern
+        for pattern in all_patterns:
+            stats[pattern] = []
+        
+        # Walk through directory tree
+        for root, dirs, files in os.walk(directory_path):
+            for filename in files:
+                if not (filename.endswith('.fits') or filename.endswith('.fits.fz')):
+                    continue
+                
+                stats['total_files_scanned'] += 1
+                file_path = os.path.join(root, filename)
+                
+                try:
+                    analyzer = cls(filename)
+                    pattern = analyzer.filename_pattern
+                    
+                    if pattern in stats['pattern_counts']:
+                        stats['pattern_counts'][pattern] += 1
+                    else:
+                        pattern = 'unparseable'
+                        stats['pattern_counts']['unparseable'] += 1
+                    
+                    # Create file information record
+                    file_info = {
+                        'filename': filename,
+                        'path': file_path,
+                        'date': analyzer.date,
+                        'parsed': analyzer.parsed_filename
+                    }
+                    
+                    stats[pattern].append(file_info)
+
+                    # Update date range
+                    if analyzer.date:
+                        if stats['date_range']['earliest'] is None or analyzer.date < stats['date_range']['earliest']:
+                            stats['date_range']['earliest'] = analyzer.date
+                        if stats['date_range']['latest'] is None or analyzer.date > stats['date_range']['latest']:
+                            stats['date_range']['latest'] = analyzer.date
+                
+                    # Collect metadata and track variations
+                    parsed = analyzer.parsed_filename
+                    if parsed:
+                        # Dynamic filter discovery
+                        if 'filter' in parsed and parsed['filter']:
+                            stats['filters_found'].add(parsed['filter'])
+                        
+                        # Units
+                        if 'unit' in parsed and parsed['unit']:
+                            stats['units_found'].add(parsed['unit'])
+                        
+                        # Track pattern variations
+                        if pattern == 'flatwizard':
+                            if parsed.get('is_automated'):
+                                stats['pattern_variations']['flatwizard_automated'] += 1
+                                stats['special_cases']['automated_flats'] += 1
+                        
+                        elif pattern == 'old_v1_fits':
+                            variation = parsed.get('pattern_variation')
+                            if variation == 'complex_with_double_underscore':
+                                stats['pattern_variations']['old_v1_complex_with_double_underscore'] += 1
+                            elif variation == 'simple_7_part':
+                                stats['pattern_variations']['old_v1_simple_7_part'] += 1
+                            elif variation == 'focus_calibration_triple_underscore':
+                                stats['pattern_variations']['old_v1_focus_calibrations'] += 1
+                            
+                            if parsed.get('is_focus_pattern'):
+                                stats['pattern_variations']['old_v1_focus_patterns'] += 1
+                        
+                        elif pattern == 'old_v2_fits' and parsed.get('has_object_number'):
+                            stats['pattern_variations']['old_v2_with_object_numbers'] += 1
+                        
+                        # Track special cases
+                        if parsed.get('is_focus_test'):
+                            stats['special_cases']['focus_tests'] += 1
+                        if parsed.get('is_focus_pattern'):
+                            stats['special_cases']['focus_patterns'] += 1
+                        if parsed.get('is_focus_calibration'):
+                            stats['special_cases']['focus_calibrations'] += 1
+                        if parsed.get('modifier') == 'shift':
+                            stats['special_cases']['shift_observations'] += 1
+                        if parsed.get('has_object_number'):
+                            stats['special_cases']['object_numbers'] += 1
+                        if parsed.get('empty_object_field'):
+                            stats['special_cases']['empty_objects'] += 1
+
+                except ValueError:
+                    # File couldn't be parsed
+                    stats['pattern_counts']['unparseable'] += 1
+                    stats['unparseable'].append({
+                        'filename': filename,
+                        'path': file_path
+                    })
+        
+        # Convert sets to sorted lists
+        stats['units_found'] = sorted(list(stats['units_found']))
+        stats['filters_found'] = sorted(list(stats['filters_found']))
+        
+        return stats
+
+    def is_science_frame(self):
+        """Check if this is a science frame (not calibration)."""
+        if not self._parsed_filename:
+            return False
+        
+        frame_type = self._parsed_filename.get('frame_type', '').upper()
+        if frame_type == 'LIGHT':
+            return True
+        
+        # For new format, assume science if no frame_type specified
+        if self._parsed_filename.get('pattern') == 'new_fits':
+            return True
+        
+        return False
+    
+    def get_exposure_time(self):
+        """Get exposure time in seconds."""
+        if not self._parsed_filename:
+            return None
+        
+        try:
+            return float(self._parsed_filename.get('exptime', 0))
+        except (ValueError, TypeError):
+            return None
+    
+    def extract_timestamp(self):
+        """Extract full timestamp from parsed filename."""
+        if not self._parsed_filename:
+            return None
+            
+        parsed = self._parsed_filename
+        
+        try:
+            if parsed.get('pattern') == 'new_fits':
+                # YYYYMMDD_HHMMSS format
+                date_str = parsed['date']
+                time_str = parsed['time']
+                timestamp_str = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}T{time_str[:2]}:{time_str[2:4]}:{time_str[4:6]}"
+                dt = datetime.datetime.strptime(timestamp_str, '%Y-%m-%dT%H:%M:%S')
+            else:
+                # YYYY-MM-DD HH-MM-SS format
+                date_str = parsed['date']
+                time_str = parsed['time'].replace('-', ':')
+                timestamp_str = f"{date_str}T{time_str}"
+                dt = datetime.datetime.strptime(timestamp_str, '%Y-%m-%dT%H:%M:%S')
+
+            # Make timezone-aware (assume UTC for filename timestamps)
+            if dt.tzinfo is None:
+                dt = pytz.UTC.localize(dt)
+
+            return dt
+
+        except (KeyError, ValueError):
+            return None
+
+    def is_valid_pattern(self):
+        """Check if filename matches valid patterns."""
+        return self.filename_pattern in ['new_fits', 'old_v2_fits', 'old_v1_fits', 'old_v0_fits']
+    
+    def should_exclude(self):
+        """Check if file should be excluded."""
+        filename_upper = self.filename.upper()
+        return 'FOCUS' in filename_upper or 'TEST' in filename_upper
+    
+    def get_exclusion_reason(self):
+        """Get reason for file exclusion."""
+        filename_upper = self.filename.upper()
+        if 'FOCUS' in filename_upper:
+            return "FOCUS frame (autofocus test)"
+        elif 'TEST' in filename_upper:
+            return "TEST frame"
+        else:
+            return "Unknown exclusion reason"
+
+
+# === ABSTRACT BASE MODEL FOR ALL RAW FRAMES ===
+class ObservationFrame(models.Model):
+    """
+    Enhanced abstract base model for all observation frames.
+    Based on TCSpy header structure with NINA compatibility mapping.
+
+    """
+    # === File Management ===
+    original_filename = models.CharField(max_length=255, db_index=True, 
+                                       help_text="Original filename as stored on disk")
+    file_path = models.CharField(max_length=500, help_text="Full path to the file")
+    file_size = models.BigIntegerField(null=True, blank=True, help_text="File size in bytes")
+    
+    # === Unified Identifiers ===
+    unit = models.ForeignKey(Unit, on_delete=models.CASCADE, db_index=True)
+    night = models.ForeignKey(Night, on_delete=models.CASCADE, db_index=True)
+    
+    # === Image ID (TCSpy standard, generate for legacy files) ===
+    image_id = models.CharField(max_length=64, null=True, blank=True, unique=True, db_index=True,
+                               help_text="Unique image identifier (TCSpy IMAGEID or generated)")
+    
+    # === Filename Pattern Information ===
+    filename_pattern = models.CharField(max_length=20, choices=[
+        ('new_fits', 'New Format (Current)'),
+        ('old_v2_fits', 'Old Format v2 (with Unit)'),
+        ('old_v1_fits', 'Old Format v1 (Original)'),
+        ('old_v0_fits', 'Old Format v0 (Early)'),
+    ], db_index=True)
+    
+    filename_metadata = models.JSONField(default=dict, blank=True,
+                                       help_text="Parsed filename components and variants")
+    
+    # === Unified Filename (normalized to new format for consistency) ===
+    unified_filename = models.CharField(max_length=255, db_index=True,
+                                      help_text="Filename converted to new format standard")
+    
+    # === Critical Timing ===
+    obstime = models.DateTimeField(db_index=True, help_text="Observation timestamp (UTC)")
+    local_obstime = models.DateTimeField(null=True, blank=True, 
+                                         help_text="Local observation timestamp")
+    
+    # === Julian Date (TCSpy standard) ===
+    jd = models.FloatField(null=True, blank=True, help_text="Julian Date")
+    mjd = models.FloatField(null=True, blank=True, help_text="Modified Julian Date")
+    
+    # === Core Image Parameters (common to ALL frames) ===
+    exptime = models.FloatField(db_index=True, help_text="Exposure time in seconds")
+    binning_x = models.IntegerField(default=1)
+    binning_y = models.IntegerField(default=1)
+    gain = models.IntegerField(null=True, blank=True, db_index=True)
+    egain = models.FloatField(null=True, blank=True, db_index=True)
+    
+    # === Detector Information ===
+    instrument = models.CharField(max_length=100, blank=True, help_text="Camera/Instrument name")
+    ccdtemp = models.FloatField(null=True, blank=True, db_index=True, 
+                                           help_text="CCD temperature in Celsius")
+    set_ccdtemp = models.FloatField(null=True, blank=True, help_text="CCD temperature setpoint")
+    cooler_power = models.FloatField(null=True, blank=True, help_text="CCD cooler power percentage")
+    
+    # === Pixel Information ===
+    pixscale_x = models.FloatField(null=True, blank=True, help_text="Pixel size X in microns")
+    pixscale_y = models.FloatField(null=True, blank=True, help_text="Pixel size Y in microns")
+    
+    # === Software Detection and Version ===
+    software_used = models.CharField(max_length=20, choices=[
+        ('nina', 'N.I.N.A.'),
+        ('tcspy', 'TCSPY'),
+        ('unknown', 'Unknown'),
+    ], default='unknown', db_index=True)
+    
+    software_version = models.CharField(max_length=100, blank=True, help_text="Software version string")
+    
+    # === Observer Information (TCSpy) ===
+    observer = models.CharField(max_length=100, blank=True, help_text="Observer name")
+    
+    # === Header Storage Strategy ===
+    # Minimal header cache for reference - most fields extracted to dedicated columns
+    fits_header_cache = models.JSONField(default=dict, blank=True,
+                                       help_text="Complete FITS header for reference")
+    
+    # === Processing Status ===
+    header_parsed = models.BooleanField(default=False, db_index=True)
+    processing_status = models.CharField(max_length=20, default='pending', db_index=True)
+    
+    # === Record Keeping ===
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        abstract = True
+        indexes = [
+            models.Index(fields=['unit', 'night']),
+            models.Index(fields=['obstime']),
+            models.Index(fields=['jd']),  
+            models.Index(fields=['mjd']),
+            models.Index(fields=['exptime', 'gain']),
+            models.Index(fields=['software_used', 'obstime']),
+            models.Index(fields=['observer', 'obstime']),
+            models.Index(fields=['image_id']),
+        ]
+
+    def save(self, *args, **kwargs):
+        """Override save to ensure timezone-aware timestamps and generate IDs."""
+    
+        # Ensure obstime is timezone-aware
+        if self.obstime and self.obstime.tzinfo is None:
+            self.obstime = pytz.UTC.localize(self.obstime)
+    
+        # Ensure local_obstime is timezone-aware
+        if self.local_obstime and self.local_obstime.tzinfo is None:
+            chile_tz = pytz.timezone('America/Santiago')
+            self.local_obstime = chile_tz.localize(self.local_obstime)
+
+        # Ensure af_time is timezone-aware
+        if hasattr(self, 'af_time') and self.af_time and self.af_time.tzinfo is None:
+            self.af_time = pytz.UTC.localize(self.af_time)
+    
+        # Ensure weather_update_time is timezone-aware
+        if hasattr(self, 'weather_update_time') and self.weather_update_time and self.weather_update_time.tzinfo is None:
+            self.weather_update_time = pytz.UTC.localize(self.weather_update_time)
+    
+        # Generate IDs if needed
+        if not self.image_id:
+            self.image_id = self.generate_image_id()
+    
+        if not self.unified_filename:
+            self.unified_filename = self.generate_unified_filename()
+    
+        super().save(*args, **kwargs)
+    
+    def generate_image_id(self):
+        """Generate unique image ID for files that don't have one."""
+        base_string = f"{self.file_path}_{self.obstime}_{uuid.uuid4().hex[:8]}"
+        return hashlib.md5(base_string.encode()).hexdigest()
+
+    def generate_unified_filename(self):
+        """
+        Generate unified filename based on frame type and content.
+        Enhanced to handle all frame types properly.
+        """
+        # Base components
+        unit_name = self.unit.name if self.unit else 'UNKNOWN'
+        date_str = self.obstime.strftime('%Y%m%d_%H%M%S') if self.obstime else 'UNKNOWN'
+        
+        # Frame type specific naming
+        if isinstance(self, ScienceFrame):
+            # Science frame: unit_date_object_filter_exptime
+            object_name = self.object_name or 'UNKNOWN'
+            filter_name = self.filter.name if self.filter else 'unknown'
+            exptime_str = f"{self.exptime:.1f}s" if self.exptime else "0.0s"
+            
+            # Check if this is a tile observation
+            if hasattr(self, 'tile') and self.tile:
+                object_part = f"T{self.tile.id:05d}"
+            elif hasattr(self, 'target') and self.target:
+                object_part = self.target.name
+            else:
+                object_part = object_name
+            
+            return f"{unit_name}_{date_str}_{object_part}_{filter_name}_{exptime_str}"
+            
+        elif isinstance(self, BiasFrame):
+            # Bias frame: unit_date_BIAS_exptime
+            exptime_str = f"{self.exptime:.1f}s" if self.exptime else "0.0s"
+            return f"{unit_name}_{date_str}_BIAS_{exptime_str}"
+            
+        elif isinstance(self, DarkFrame):
+            # Dark frame: unit_date_DARK_exptime
+            exptime_str = f"{self.exptime:.1f}s" if self.exptime else "0.0s"
+            return f"{unit_name}_{date_str}_DARK_{exptime_str}"
+            
+        elif isinstance(self, FlatFrame):
+            # Flat frame: unit_date_FLAT_filter_exptime
+            filter_name = self.filter.name if self.filter else 'unknown'
+            exptime_str = f"{self.exptime:.1f}s" if self.exptime else "0.0s"
+            return f"{unit_name}_{date_str}_FLAT_{filter_name}_{exptime_str}"
+            
+        else:
+            # Fallback for unknown frame types
+            return f"{unit_name}_{date_str}_UNKNOWN"
+    
+    def parse_fits_header(self):
+        """
+        Enhanced header parsing with NINA/TCSpy compatibility mapping.
+        TCSpy headers are the primary standard, NINA headers are mapped accordingly.
+        """
+        try:
+            with fits.open(self.file_path) as hdul:
+                header = hdul[0].header
+                
+                # Store complete header
+                self.fits_header_cache = dict(header)
+                
+                # === Software Detection ===
+                if 'LOGPATH' in header and 'tcspy' in str(header.get('LOGPATH', '')):
+                    self.software_used = 'tcspy'
+                    self.software_version = header.get('VERSION', '')
+                elif 'SWCREATE' in header and 'N.I.N.A' in str(header['SWCREATE']):
+                    self.software_used = 'nina'
+                    self.software_version = str(header.get('SWCREATE', ''))
+                else:
+                    self.software_used = 'unknown'
+                
+                # === Image ID (TCSpy standard) ===
+                if 'IMAGEID' in header:
+                    self.image_id = header['IMAGEID']
+                
+                # === Basic Image Parameters ===
+                if 'EXPTIME' in header:
+                    self.exptime = float(header['EXPTIME'])
+
+                self.binning_x = int(header.get('XBINNING', 1))
+                self.binning_y = int(header.get('YBINNING', 1))
+
+                if 'GAIN' in header:
+                    self.gain = header.get('GAIN')
+                
+                # === Detector Information ===
+                self.instrument = header.get('INSTRUME', '')
+                self.ccdtemp = header.get('CCD-TEMP')
+                self.set_ccdtemp = header.get('SET-TEMP')
+                self.cooler_power = header.get('COLPOWER')  # TCSpy specific
+                
+                # === Pixel Information ===
+                self.pixscale_x = header.get('XPIXSZ')
+                self.pixscale_y = header.get('YPIXSZ')
+                
+                # === Observer Information ===
+                self.observer = header.get('OBSERVER', '')
+                
+                # === Julian Dates (TCSpy standard) ===
+                self.jd = header.get('JD')
+                self.mjd = header.get('MJD')
+
+                # === Timestamps with timezone handling ===
+                if 'DATE-OBS' in header and not self.obstime:
+                    try:
+                        time_obj = Time(header['DATE-OBS'])
+                        obstime = time_obj.datetime
+                        # Make timezone-aware if needed
+                        if obstime.tzinfo is None:
+                            obstime = pytz.UTC.localize(obstime)
+                        self.obstime = obstime
+                    except:
+                        pass
+            
+                # Parse local time (different formats between NINA/TCSpy)
+                if 'DATE-LOC' in header:
+                    try:
+                        date_loc_str = header['DATE-LOC']
+
+                        if 'T' in date_loc_str:
+                            # NINA format: 2024-05-01T23:23:25.346
+                            local_time = datetime.datetime.fromisoformat(date_loc_str.replace('T', ' '))
+                        else:
+                            # TCSpy format: 2025-05-22 20:58:10.000
+                            local_time = datetime.datetime.fromisoformat(date_loc_str)
+                    
+                        # Make timezone-aware
+                        if local_time.tzinfo is None:
+                            chile_tz = pytz.timezone('America/Santiago')
+                            local_time = chile_tz.localize(local_time)
+                    
+                        self.local_obstime = local_time
+                    
+                    except Exception as e:
+                        print(f"Error parsing local timestamp '{header['DATE-LOC']}': {e}")
+            
+                self.header_parsed = True
+
+        except Exception as e:
+            print(f"Error parsing FITS header for {self.original_filename}: {e}")
+            self.header_parsed = False
+    
+    def _parse_local_timestamp(self, date_loc_string):
+        """Parse local timestamp handling different formats with timezone awareness."""
+        local_time = None  # Initialize the variable
+        try:
+        
+            if 'T' in date_loc_string:
+                # NINA format: 2024-05-01T23:23:25.346
+                local_time = datetime.datetime.fromisoformat(date_loc_string.replace('T', ' '))
+            else:
+                # TCSpy format: 2025-05-22 20:58:10.000
+                local_time = datetime.datetime.fromisoformat(date_loc_string)
+        
+            # Make timezone-aware (assume Chile timezone for local time)
+            if local_time and local_time.tzinfo is None:
+                chile_tz = pytz.timezone('America/Santiago')
+                local_time = chile_tz.localize(local_time)
+            
+            if local_time:
+                self.local_obstime = local_time
+        
+        except Exception as e:
+            print(f"Error parsing local timestamp '{date_loc_string}': {e}")
+            print(f"  Type: {type(date_loc_string)}")
+            print(f"  Value: {repr(date_loc_string)}")
+
+    def _clean_header_value(self, value, default=''):
+        if value is None:
+            return default
+        
+        if isinstance(value, str):
+            cleaned = value.strip()
+            return cleaned if cleaned else default
+        
+        return value
+    
+    def _clean_string_header(self, header, key, default=''):
+        raw_value = header.get(key, default)
+        return self._clean_header_value(raw_value, default)
+    
+    def _normalize_object_type(self, objtype_value):
+        if not objtype_value:
+            return ''
+        
+        objtype_clean = objtype_value.strip().upper()
+        
+        # Direct matches
+        direct_mapping = {
+            'BIAS': 'BIAS',
+            'DARK': 'DARK', 
+            'FLAT': 'FLAT',
+            'RIS': 'RIS',
+            'WTS': 'WTS',
+            'IMS': 'IMS',
+            'TOO': 'ToO',
+            'TARGET': 'target',
+        }
+        
+        return direct_mapping.get(objtype_clean, 'target')
+
+    def _normalize_obsmode(self, obsmode_value):
+        if not obsmode_value:
+            return ''
+        
+        obsmode_clean = obsmode_value.strip().title()  # Single, Spec, etc.
+        
+        # Valid choices
+        valid_obsmodes = [
+            'Single', 'Spec', 'Deep', 'Search', 'Color'
+        ]
+        
+        return obsmode_clean if obsmode_clean in valid_obsmodes else ''
+    
+    def _normalize_specmode(self, specmode_value):
+        if not specmode_value:
+            return ''
+        
+        specmode_clean = specmode_value.strip().lower()
+        
+        # Valid choices
+        valid_specmodes = ['specall']
+        
+        return specmode_clean if specmode_clean in valid_specmodes else ''
+
+
+class BiasFrame(ObservationFrame):
+    """RAW bias calibration frames."""
+    
+    # === Bias-specific Analysis ===
+    median_level = models.FloatField(null=True, blank=True)
+    noise_level = models.FloatField(null=True, blank=True)
+    std_deviation = models.FloatField(null=True, blank=True)
+    
+    # === Quality Assessment ===
+    is_usable = models.BooleanField(default=True)
+    quality_score = models.FloatField(null=True, blank=True)
+    quality_flags = models.JSONField(default=list, blank=True)
+
+    class Meta:
+        verbose_name = "Bias Frame"
+        verbose_name_plural = "Bias Frames"
+        indexes = [
+            models.Index(fields=['unit', 'night', 'gain']),
+            models.Index(fields=['is_usable', 'quality_score']),
+            models.Index(fields=['median_level']),
+            models.Index(fields=['obstime']),
+        ]
+
+    def __str__(self):
+        return f"Bias {self.unit.name} {self.night.date} {self.obstime.strftime('%H:%M:%S')}"
+
+
+class DarkFrame(ObservationFrame):
+    """RAW dark calibration frames."""
+    
+    # === Dark-specific Analysis ===
+    dark_current = models.FloatField(null=True, blank=True)
+    hotpix_count = models.IntegerField(null=True, blank=True)
+    median_level = models.FloatField(null=True, blank=True)
+    #thermal_gradient = models.FloatField(null=True, blank=True)
+    
+    # === Quality Assessment ===
+    is_usable = models.BooleanField(default=True)
+    quality_score = models.FloatField(null=True, blank=True)
+    quality_flags = models.JSONField(default=list, blank=True)
+    
+    class Meta:
+        verbose_name = "Dark Frame"
+        verbose_name_plural = "Dark Frames"
+        indexes = [
+            models.Index(fields=['unit', 'night', 'exptime', 'gain']),
+            models.Index(fields=['is_usable', 'quality_score']),
+            models.Index(fields=['dark_current']),
+            models.Index(fields=['obstime']),
+        ]
+
+    def __str__(self):
+        return f"Dark {self.unit.name} {self.night.date} {self.exptime}s {self.obstime.strftime('%H:%M:%S')}"
+
+
+class FlatFrame(ObservationFrame):
+    """RAW flat field calibration frames."""
+    
+    filter = models.ForeignKey(Filter, on_delete=models.CASCADE, db_index=True)
+    
+    # === Flat-specific Analysis ===
+    median_counts = models.FloatField(null=True, blank=True)
+    uniformity_rms = models.FloatField(null=True, blank=True)
+    vignetting_level = models.FloatField(null=True, blank=True)
+    illumination_gradient = models.FloatField(null=True, blank=True)
+    
+    # === Quality Assessment ===
+    is_usable = models.BooleanField(default=True)
+    quality_score = models.FloatField(null=True, blank=True)
+    quality_flags = models.JSONField(default=list, blank=True)
+    
+    class Meta:
+        verbose_name = "Flat Frame"
+        verbose_name_plural = "Flat Frames"
+        indexes = [
+            models.Index(fields=['unit', 'night', 'filter']),
+            models.Index(fields=['filter', 'is_usable']),
+            models.Index(fields=['median_counts']),
+            models.Index(fields=['obstime']),
+        ]
+
+    def __str__(self):
+        return f"Flat {self.unit.name} {self.night.date} {self.filter.name} {self.obstime.strftime('%H:%M:%S')}"
+
+
+class ScienceFrame(ObservationFrame):
+    """Simplified science observation frames with practical filter management and full NINA/TCSpy header support."""
+    
+    # === Basic Filter Information (Simplified) ===
+    filter = models.ForeignKey(Filter, on_delete=models.CASCADE, db_index=True, 
+                              help_text="Filter from FITS header (as-is)")
+    
+    # === Target Information === either tile or target
+    tile = models.ForeignKey(
+        'Tile',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text="Associated tile for survey observations"
+    )
+    
+    target = models.ForeignKey(
+        'Target',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text="Associated target for non-survey observations"
+    )
+
+    #tile = models.ForeignKey(Tile, on_delete=models.SET_NULL, null=True, blank=True, db_index=True)
+
+    object_name = models.CharField(max_length=100, db_index=True, help_text="OBJECT field")     # T13785
+    
+    # === TCSpy Target Information with Standard Values ===
+    object_type = models.CharField(
+        max_length=20, 
+        blank=True, 
+        db_index=True, 
+        choices=[
+            ('BIAS', 'Bias'),
+            ('DARK', 'Dark'),
+            ('FLAT', 'Flat'),
+            ('RIS', 'RIS'), #Reference Imaging Survey'),
+            ('WTS', 'WTS'), #ide-field Time-domain Survey'),
+            ('IMS', 'IMS'), #Intensive Monitoring Survey'),
+            ('ToO', 'Target of Opportunity'),
+            ('target', 'General Target'),
+        ],
+        help_text="OBJTYPE - Object classification (TCSpy standard values)"
+    )
+
+    object_id = models.CharField(max_length=64, blank=True, help_text="OBJCTID - Object identifier") # uuid
+    
+    # === Target Coordinates (TCSpy Standard) ===
+    object_ra_hms = models.CharField(max_length=20, blank=True, help_text="OBJCTRA - RA in HMS format")
+    object_dec_dms = models.CharField(max_length=20, blank=True, help_text="OBJCTDEC - Dec in DMS format")
+    object_ra = models.FloatField(null=True, blank=True, db_index=True, help_text="OBJCTRA_ - Target RA in degrees")
+    object_dec = models.FloatField(null=True, blank=True, db_index=True, help_text="OBJCTDE_ - Target Dec in degrees")
+    object_alt = models.FloatField(null=True, blank=True, db_index=True, help_text="OBJCTALT - Target altitude")
+    object_az = models.FloatField(null=True, blank=True, db_index=True, help_text="OBJCTAZ - Target azimuth")
+    object_ha = models.CharField(max_length=20, blank=True, help_text="OBJCTHA - Target hour angle")
+    
+    # === Telescope Pointing (TCSpy Standard) ===
+    unit_ra = models.FloatField(null=True, blank=True, db_index=True, help_text="RA - Telescope RA in degrees")
+    unit_dec = models.FloatField(null=True, blank=True, db_index=True, help_text="DEC - Telescope Dec in degrees")
+    unit_alt = models.FloatField(null=True, blank=True, db_index=True, help_text="ALTITUDE/CENTALT - Telescope altitude")
+    unit_az = models.FloatField(null=True, blank=True, db_index=True, help_text="AZIMUTH/CENTAZ - Telescope azimuth")
+    airmass = models.FloatField(null=True, blank=True, db_index=True, help_text="AIRMASS")
+    
+    # === Moon Information (TCSpy Only) ===
+    moon_sep = models.FloatField(null=True, blank=True, db_index=True, 
+                                      help_text="MOONSEP - Separation from moon in degrees")
+    moon_phase = models.FloatField(null=True, blank=True, db_index=True,
+                                 help_text="MOONPHAS - Moon illumination fraction (0-1)")
+    
+    # === Observation Strategy (TCSpy Only) ===
+    obsmode = models.CharField(
+        max_length=20, 
+        blank=True, 
+        db_index=True,
+        choices=[
+            ('Single', 'Single Mode'),
+            ('Spec', 'Spectroscopic Mode'),
+            ('Deep', 'Deep Mode'),
+            ('Search', 'Search Mode'),
+            ('Color', 'Color Mode'),
+        ],
+        help_text="OBSMODE - Observation mode (TCSpy standard values)"
+    )
+
+    specmode = models.CharField(
+        max_length=20, 
+        blank=True,
+        choices=[
+            ('specall', 'All Spectroscopic'),
+            ('', 'Not Applicable'),
+        ],
+        help_text="SPECMODE - Spectroscopic mode (when OBSMODE=Spec)"
+    )
+
+    ntels = models.IntegerField(null=True, blank=True, 
+                                       help_text="NTELSCOP - Number of telescopes in observation")
+    
+    # === Focus Information (TCSpy Standard, NINA Compatible) ===
+    focuser_position = models.FloatField(null=True, blank=True, db_index=True, help_text="FOCUSPOS/FOCPOS - Focuser position")
+    af_time = models.DateTimeField(null=True, blank=True, db_index=True, help_text="AFTIME - Last autofocus time")
+    af_value = models.FloatField(null=True, blank=True, db_index=True, help_text="AFVALUE - Autofocus position")
+    af_error = models.FloatField(null=True, blank=True, db_index=True, help_text="AFERROR - Autofocus error")
+    
+    # === Weather Data (TCSpy Standard, NINA Compatible) ===
+    weather_update_time = models.DateTimeField(null=True, blank=True, help_text="DATE-WEA - Weather data timestamp")
+    ambient_temperature = models.FloatField(null=True, blank=True, db_index=True, help_text="AMBTEMP - Ambient temperature (°C)")
+    humidity = models.FloatField(null=True, blank=True, db_index=True, help_text="HUMIDITY - Relative humidity (%)")
+    pressure = models.FloatField(null=True, blank=True, db_index=True, help_text="PRESSURE - Atmospheric pressure (hPa)")
+    dew_point = models.FloatField(null=True, blank=True, db_index=True, help_text="DEWPOINT - Dew point temperature (°C)")
+    wind_speed = models.FloatField(null=True, blank=True, db_index=True, help_text="WINDSPED/WINDSPD - Wind speed (m/s)")
+    wind_direction = models.FloatField(null=True, blank=True, db_index=True, help_text="WINDDIR - Wind direction (degrees)")
+    wind_gust = models.FloatField(null=True, blank=True, db_index=True, help_text="WINDGUST - Wind gust speed (m/s)")
+    sky_brightness = models.FloatField(null=True, blank=True, db_index=True, help_text="SKYBRGHT/MPSAS - Sky brightness (mag/arcsec²)")
+    sky_temperature = models.FloatField(null=True, blank=True, db_index=True, help_text="SKYTEMP - Sky temperature (°C)")
+    cloud_fraction = models.FloatField(null=True, blank=True, db_index=True, help_text="CLUDFRAC/CLOUDCVR - Cloud coverage fraction (0-1)")
+    rain_rate = models.FloatField(null=True, blank=True, db_index=True, help_text="RAINRATE - Rain rate (mm/h)")
+    
+    # === NINA-Specific Weather Data (Not in TCSpy) ===
+    weather_age = models.FloatField(null=True, blank=True, help_text="WEATHER_AGE - Age of weather data (NINA only)")
+    weather_station = models.CharField(max_length=50, blank=True, help_text="Weather station identifier (NINA only)")
+    
+    # === Image Quality Metrics ===
+    fwhm = models.FloatField(null=True, blank=True, db_index=True, help_text="SKYFWHM/STARFWHM - Seeing FWHM (arcsec)")
+    background_level = models.FloatField(null=True, blank=True, help_text="Background level (ADU)")
+    num_sources = models.IntegerField(null=True, blank=True, help_text="Number of detected sources")
+    limiting_magnitude = models.FloatField(null=True, blank=True, help_text="Limiting magnitude")
+    ellipticity = models.FloatField(null=True, blank=True, help_text="Average source ellipticity")
+    
+    # === Star Detection (TCSpy/NINA Compatible) ===
+    star_count = models.IntegerField(null=True, blank=True, help_text="STAR_COUNT - Number of detected stars")
+    median_hfd = models.FloatField(null=True, blank=True, help_text="HFD - Half Flux Diameter median (pixels)")
+    
+    # === NINA-Specific Image Quality ===
+    nina_hfr = models.FloatField(null=True, blank=True, help_text="HFR - Half Flux Radius (NINA only)")
+    nina_star_detection_sensitivity = models.FloatField(null=True, blank=True, help_text="Star detection sensitivity (NINA only)")
+    
+    # === Observation Flags ===
+    is_too = models.BooleanField(default=False, db_index=True, help_text="IS_TOO - Target of Opportunity")
+    is_shift_observation = models.BooleanField(default=False, db_index=True, help_text="Shift observation flag")
+    is_test_observation = models.BooleanField(default=False, db_index=True, help_text="Test observation flag")
+    
+    # === Guiding Information (NINA Only) ===
+    guiding_enabled = models.BooleanField(null=True, blank=True, help_text="GUIDING - Guiding status (NINA only)")
+    guiding_rms_ra = models.FloatField(null=True, blank=True, help_text="Guiding RMS RA (arcsec, NINA only)")
+    guiding_rms_dec = models.FloatField(null=True, blank=True, help_text="Guiding RMS Dec (arcsec, NINA only)")
+    guiding_rms_total = models.FloatField(null=True, blank=True, help_text="Guiding RMS total (arcsec, NINA only)")
+    
+    # === Plate Solving (NINA/TCSpy Compatible) ===
+    plate_solved = models.BooleanField(null=True, blank=True, help_text="Plate solving status")
+    plate_solve_ra = models.FloatField(null=True, blank=True, help_text="Plate solved RA")
+    plate_solve_dec = models.FloatField(null=True, blank=True, help_text="Plate solved Dec")
+    plate_solve_angle = models.FloatField(null=True, blank=True, help_text="Plate solved rotation angle")
+    plate_solve_pixel_scale = models.FloatField(null=True, blank=True, help_text="Plate solved pixel scale")
+    
+    # === Sequence Information (NINA Only) ===
+    sequence_title = models.CharField(max_length=100, blank=True, help_text="Sequence title (NINA only)")
+    sequence_target = models.CharField(max_length=100, blank=True, help_text="Sequence target (NINA only)")
+    
+    # === Notes and Comments ===
+    obsnote = models.TextField(blank=True, help_text="NOTE - Observation notes")
+
+    class Meta:
+        verbose_name = "Science Frame"
+        verbose_name_plural = "Science Frames"
+        indexes = [
+            # === Core indexes ===
+            models.Index(fields=['unit', 'night', 'filter']),
+            models.Index(fields=['object_name']),
+            models.Index(fields=['object_type']),
+            models.Index(fields=['tile', 'filter']),
+            
+            # === Coordinate searches ===
+            models.Index(fields=['object_ra', 'object_dec']),
+            models.Index(fields=['unit_ra', 'unit_dec']),
+            models.Index(fields=['object_alt', 'object_az']),
+            models.Index(fields=['unit_alt', 'unit_az']),
+            
+            # === Quality and conditions ===
+            models.Index(fields=['fwhm']),
+            models.Index(fields=['airmass']),
+            models.Index(fields=['ambient_temperature']),
+            models.Index(fields=['humidity']),
+            models.Index(fields=['pressure']),
+            models.Index(fields=['dew_point']),
+            models.Index(fields=['wind_speed']),
+            models.Index(fields=['wind_direction']),
+            models.Index(fields=['wind_gust']),
+            models.Index(fields=['sky_brightness']),
+            models.Index(fields=['sky_temperature']),
+            models.Index(fields=['cloud_fraction']),
+            models.Index(fields=['rain_rate']),
+            
+            # === Focus indexes ===
+            models.Index(fields=['focuser_position']),
+            models.Index(fields=['af_time']),
+            models.Index(fields=['af_value']),
+            models.Index(fields=['af_error']),
+            
+            # === Moon and strategy ===
+            models.Index(fields=['moon_sep']),
+            models.Index(fields=['moon_phase']),
+            models.Index(fields=['obsmode']),
+            
+            # === Flags ===
+            models.Index(fields=['is_too', 'obstime']),
+            models.Index(fields=['is_shift_observation']),
+            models.Index(fields=['is_test_observation']),
+            
+            # === Image quality ===
+            models.Index(fields=['star_count']),
+            models.Index(fields=['median_hfd']),
+            models.Index(fields=['nina_hfr']),
+            
+            # === Guiding ===
+            models.Index(fields=['guiding_enabled']),
+            models.Index(fields=['guiding_rms_total']),
+            
+            # === Plate solving ===
+            models.Index(fields=['plate_solved']),
+            
+            # === Composite indexes for complex queries ===
+            models.Index(fields=['ambient_temperature', 'humidity', 'wind_speed']),
+            models.Index(fields=['cloud_fraction', 'rain_rate']),
+            models.Index(fields=['fwhm', 'airmass', 'sky_brightness']),
+            models.Index(fields=['af_time', 'af_error']),
+            models.Index(fields=['focuser_position', 'fwhm']),
+            models.Index(fields=['guiding_rms_total', 'fwhm']),
+        ]
+    
+    def get_effective_filter(self):
+        """Get the most reliable filter for this observation."""
+        return self.filter
+    
+    def parse_fits_header(self):
+        """Enhanced parsing with complete NINA/TCSpy header mapping."""
+        super().parse_fits_header()
+        
+        if not self.header_parsed:
+            return
+        
+        header = self.fits_header_cache
+        
+        # === Software-specific parsing ===
+        if self.software_used == 'nina':
+            self._parse_nina_headers(header)
+        elif self.software_used == 'tcspy':
+            self._parse_tcspy_headers(header)
+        
+        # === Common fallback parsing ===
+        self._parse_common_headers(header)
+        
+        # === Post-processing ===
+        self._detect_object_type()
+        self._detect_observation_flags()
+    
+    def _parse_nina_headers(self, header):
+        """Parse NINA-specific headers and map to TCSpy standard."""
+        
+        # === Basic target information ===
+        self.object_name = header.get('OBJECT', '').strip() or 'UNKNOWN'
+        
+        # === Filter handling (NINA → TCSpy mapping) ===
+        header_filter = header.get('FILTER', '').strip()
+        if header_filter:
+            # Simply store what's in the header - no reliability checking
+            self.filter, created = Filter.objects.get_or_create(name=header_filter)
+        
+        # === Coordinates (NINA → TCSpy mapping) ===
+        # NINA stores telescope coordinates as RA/DEC
+        self.unit_ra = header.get('RA') or header.get('OBJCTRA')
+        self.unit_dec = header.get('DEC') or header.get('OBJCTDEC')
+        self.unit_alt = header.get('CENTALT')  # NINA: CENTALT
+        self.unit_az = header.get('CENTAZ')    # NINA: CENTAZ
+        self.airmass = header.get('AIRMASS')
+        
+        # === Weather data (NINA → TCSpy mapping) ===
+        self.ambient_temperature = header.get('AMBTEMP')
+        self.humidity = header.get('HUMIDITY')
+        self.pressure = header.get('PRESSURE')
+        self.dew_point = header.get('DEWPOINT')
+        self.wind_direction = header.get('WINDDIR')
+        self.wind_gust = header.get('WINDGUST')
+        self.sky_temperature = header.get('SKYTEMP')
+        self.rain_rate = header.get('RAINRATE')
+        
+        # NINA-specific field names
+        self.cloud_fraction = header.get('CLOUDCVR')  # NINA: CLOUDCVR → TCSpy: CLUDFRAC
+        self.sky_brightness = header.get('MPSAS')     # NINA: MPSAS → TCSpy: SKYBRGHT
+        
+        # Wind speed with unit conversion (NINA: kph → TCSpy: m/s)
+        wind_speed = header.get('WINDSPD')  # NINA: WINDSPD
+        if wind_speed:
+            self.wind_speed = float(wind_speed) / 3.6  # kph to m/s
+        
+        # NINA-specific weather fields
+        self.weather_age = header.get('WEATHER_AGE')
+        self.weather_station = header.get('WEATHER_STATION', '').strip()
+        
+        # === Focus information (NINA → TCSpy mapping) ===
+        self.focuser_position = header.get('FOCPOS')  # NINA: FOCPOS → TCSpy: FOCUSPOS
+        
+        # === Image quality (NINA → TCSpy mapping) ===
+        self.fwhm = header.get('STARFWHM')  # NINA: STARFWHM → TCSpy: SKYFWHM
+        
+        # NINA-specific image quality
+        self.nina_hfr = header.get('HFR')
+        self.nina_star_detection_sensitivity = header.get('STAR_SENSITIVITY')
+        
+        # === Star detection ===
+        self.star_count = header.get('STAR_COUNT')
+        
+        # === Guiding information (NINA only) ===
+        self.guiding_enabled = header.get('GUIDING', '').lower() == 'true' if header.get('GUIDING') else None
+        self.guiding_rms_ra = header.get('GUIDING_RMS_RA')
+        self.guiding_rms_dec = header.get('GUIDING_RMS_DEC')
+        self.guiding_rms_total = header.get('GUIDING_RMS_TOTAL')
+        
+        # === Plate solving ===
+        self.plate_solved = header.get('PLTSOLVD', '').lower() == 'true' if header.get('PLTSOLVD') else None
+        self.plate_solve_ra = header.get('PLTSOLVD_RA')
+        self.plate_solve_dec = header.get('PLTSOLVD_DEC')
+        self.plate_solve_angle = header.get('PLTSOLVD_ANG')
+        self.plate_solve_pixel_scale = header.get('PLTSOLVD_PIX')
+        
+        # === Sequence information (NINA only) ===
+        self.sequence_title = header.get('SEQUENCE_TITLE', '').strip()
+        self.sequence_target = header.get('SEQUENCE_TARGET', '').strip()
+        
+        # === Notes ===
+        self.obsnote = header.get('NOTES', '').strip()
+        
+        # === Local timestamp (NINA format) ===
+        if 'DATE-LOC' in header:
+            try:
+                # NINA format: 2024-05-01T23:23:25.346
+                date_loc_str = header['DATE-LOC']
+                local_time = datetime.datetime.fromisoformat(date_loc_str.replace('T', ' '))
+            
+                # Make timezone-aware (assume Chile timezone for local time)
+                if local_time.tzinfo is None:
+                    chile_tz = pytz.timezone('America/Santiago')
+                    local_time = chile_tz.localize(local_time)
+            
+                self.local_obstime = local_time
+            except Exception as e:
+                print(f"Error parsing NINA local timestamp '{header['DATE-LOC']}': {e}")
+    
+    def _parse_tcspy_headers(self, header):
+        """Parse TCSpy headers (primary standard)."""
+        
+        # === Target information ===
+        self.object_name = self._clean_string_header(header, 'OBJECT', 'UNKNOWN')
+
+        # OBJTYPE with normalization
+        raw_objtype = self._clean_string_header(header, 'OBJTYPE')
+        if raw_objtype:
+            valid_choices = [choice[0] for choice in ScienceFrame._meta.get_field('object_type').choices]
+            if raw_objtype in valid_choices:
+                self.object_type = raw_objtype
+            else:
+                print(f"⚠️  Unknown OBJTYPE value: '{raw_objtype}' in {self.original_filename}")
+                print(f"   Valid choices: {valid_choices}")
+                self.object_type = 'RIS'
+
+        self.object_id = self._clean_string_header(header, 'OBJCTID')
+        
+        # === Filter handling ===
+        header_filter = header.get('FILTER', '').strip()
+        if header_filter:
+            # Simply store what's in the header - no reliability checking
+            self.filter, created = Filter.objects.get_or_create(name=header_filter)
+        
+        # === Target coordinates (TCSpy standard) ===
+        self.object_ra_hms = header.get('OBJCTRA', '').strip()
+        self.object_dec_dms = header.get('OBJCTDEC', '').strip()
+        self.object_ra = header.get('OBJCTRA_')
+        self.object_dec = header.get('OBJCTDE_')
+        self.object_alt = header.get('OBJCTALT')
+        self.object_az = header.get('OBJCTAZ')
+        self.object_ha = header.get('OBJCTHA', '').strip()
+        
+        # === Telescope coordinates ===
+        self.unit_ra = header.get('RA')
+        self.unit_dec = header.get('DEC')
+        self.unit_alt = header.get('ALTITUDE')  # TCSpy: ALTITUDE
+        self.unit_az = header.get('AZIMUTH')    # TCSpy: AZIMUTH
+        self.airmass = header.get('AIRMASS')
+        
+        # === Moon information (TCSpy only) ===
+        self.moon_sep = header.get('MOONSEP')
+        self.moon_phase = header.get('MOONPHAS')
+        
+        # === Observation strategy (TCSpy only) with normalization ===
+        raw_obsmode = self._clean_string_header(header, 'OBSMODE')
+        self.obsmode = self._normalize_obsmode(raw_obsmode)
+    
+        raw_specmode = self._clean_string_header(header, 'SPECMODE') 
+        self.specmode = self._normalize_specmode(raw_specmode)
+
+        self.ntels = header.get('NTELSCOP')
+        
+        # === Focus information ===
+        self.focuser_position = header.get('FOCUSPOS')  # TCSpy: FOCUSPOS
+        self.af_value = header.get('AFVALUE')
+        self.af_error = header.get('AFERROR')
+        if 'AFTIME' in header:
+            try:
+                self.af_time = Time(header['AFTIME']).datetime
+                # Make timezone-aware if needed
+                if af_time.tzinfo is None:
+                    af_time = pytz.UTC.localize(af_time)
+                self.af_time = af_time
+            except:
+                pass
+        
+        # === Weather data (TCSpy standard) ===
+        if 'DATE-WEA' in header:
+            try:
+                weather_time = Time(header['DATE-WEA']).datetime
+                if weather_time.tzinfo is None:
+                    weather_time = pytz.UTC.localize(weather_time)
+                self.weather_update_time = weather_time
+            except:
+                pass
+        
+        self.ambient_temperature = header.get('AMBTEMP')
+        self.humidity = header.get('HUMIDITY')
+        self.pressure = header.get('PRESSURE')
+        self.dew_point = header.get('DEWPOINT')
+        self.wind_direction = header.get('WINDDIR')
+        self.wind_gust = header.get('WINDGUST')
+        self.sky_temperature = header.get('SKYTEMP')
+        self.rain_rate = header.get('RAINRATE')
+        
+        # TCSpy-specific field names
+        self.cloud_fraction = header.get('CLUDFRAC')  # TCSpy: CLUDFRAC
+        self.sky_brightness = header.get('SKYBRGHT')  # TCSpy: SKYBRGHT
+
+        self.background_level = None
+        
+        # Wind speed (already in m/s)
+        self.wind_speed = header.get('WINDSPED')  # TCSpy: WINDSPED
+        
+        # === Image quality ===
+        self.fwhm = header.get('SKYFWHM')  # TCSpy: SKYFWHM
+        self.median_hfd = header.get('HFD')
+        self.star_count = header.get('STAR_COUNT')
+        
+        # === Observation flags ===
+        is_too_str = header.get('IS_TOO', 'False').strip()
+        self.is_too = is_too_str.lower() == 'true'
+        
+        # === Notes ===
+        self.obsnote = header.get('NOTE', '').strip()
+
+        # === Local timestamp (TCSpy format) ===
+        if 'DATE-LOC' in header:
+            local_time = None
+            try:
+                # TCSpy format: 2025-05-22 20:58:10.000
+                date_loc_str = header['DATE-LOC']
+                local_time = datetime.datetime.fromisoformat(date_loc_str)
+
+                # Make timezone-aware (assume Chile timezone for local time)
+                if local_time.tzinfo is None:
+                    chile_tz = pytz.timezone('America/Santiago')
+                    local_time = chile_tz.localize(local_time)
+            
+                self.local_obstime = local_time
+
+            except Exception as e:
+                print(f"Error parsing TCSpy local timestamp '{header['DATE-LOC']}': {e}")
+    
+    def _parse_common_headers(self, header):
+        """Parse common headers with fallback logic."""
+        
+        # === Basic info fallbacks ===
+        if not self.object_name:
+            self.object_name = header.get('OBJECT', '').strip() or 'UNKNOWN'
+        
+        # === Filter fallback ===
+        if not hasattr(self, 'filter') or not self.filter:  # Fixed: removed reference to header_filter_name
+            header_filter = header.get('FILTER', '').strip()
+            if header_filter:
+                self.filter, created = Filter.objects.get_or_create(name=header_filter)
+        
+        # === Coordinate fallbacks (try both naming conventions) ===
+        if not self.unit_ra:
+            self.unit_ra = header.get('RA') or header.get('OBJCTRA')
+        if not self.unit_dec:
+            self.unit_dec = header.get('DEC') or header.get('OBJCTDEC')
+        if not self.unit_alt:
+            self.unit_alt = header.get('ALTITUDE') or header.get('CENTALT')
+        if not self.unit_az:
+            self.unit_az = header.get('AZIMUTH') or header.get('CENTAZ')
+        if not self.airmass:
+            self.airmass = header.get('AIRMASS')
+        
+        # === Weather fallbacks ===
+        if not self.cloud_fraction:
+            self.cloud_fraction = header.get('CLUDFRAC') or header.get('CLOUDCVR')
+        if not self.sky_brightness:
+            self.sky_brightness = header.get('SKYBRGHT') or header.get('MPSAS')
+        if not self.fwhm:
+            self.fwhm = header.get('SKYFWHM') or header.get('STARFWHM')
+        if not self.focuser_position:
+            self.focuser_position = header.get('FOCUSPOS') or header.get('FOCPOS')
+        
+        # === Wind speed with unit detection ===
+        if not self.wind_speed:
+            wind_speed = header.get('WINDSPED') or header.get('WINDSPD')
+            if wind_speed:
+                # Heuristic: if we have WINDSPD (NINA field), convert from kph
+                if header.get('WINDSPD') and not header.get('WINDSPED'):
+                    self.wind_speed = float(wind_speed) / 3.6  # kph to m/s
+                else:
+                    self.wind_speed = float(wind_speed)  # assume m/s
+        
+        # === Observer ===
+        if not self.observer:
+            self.observer = header.get('OBSERVER', '').strip()
+    
+    def _detect_object_type(self):
+        """Detect target type based on OBJTYPE header and target name."""
+        if self.object_type:
+            return
+ 
+    def _detect_observation_flags(self):
+        """Detect observation flags from target name and headers."""
+        target = self.object_name.upper() if self.object_name else ''
+        
+        if 'SHIFT' in target:
+            self.is_shift_observation = True
+        
+        if 'TEST' in target or 'FOCUS' in target or 'CALIB' in target:
+            self.is_test_observation = True
+
+    @property
+    def observation_target(self):
+        """Get the primary observation target (tile or target)."""
+        if self.tile:
+            return self.tile
+        elif self.target:
+            return self.target
+        else:
+            return None
+    
+    @property
+    def target_coordinates(self):
+        """Get target coordinates (RA, Dec) in degrees."""
+        if self.tile and hasattr(self.tile, 'ra') and hasattr(self.tile, 'dec'):
+            return self.tile.ra, self.tile.dec
+        elif self.target:
+            return self.target.ra, self.target.dec
+        elif self.object_ra is not None and self.object_dec is not None:
+            return self.object_ra, self.object_dec
+        else:
+            return None, None
+
+
+class HeaderMappingReference:
+    """Reference for NINA ↔ TCSpy header mapping."""
+    
+    # Fields that map directly between NINA and TCSpy
+    DIRECT_MAPPING = {
+        # Common fields (same keyword in both)
+        'EXPTIME': 'exptime',
+        'GAIN': 'gain',
+        'XBINNING': 'binning_x',
+        'YBINNING': 'binning_y',
+        'CCD-TEMP': 'ccdtemp',
+        'SET-TEMP': 'set_ccdtemp',
+        'INSTRUME': 'instrument',
+        'OBSERVER': 'observer',
+        'OBJECT': 'object_name',
+        'AIRMASS': 'airmass',
+        'DATE-OBS': 'obstime',
+        'DATE-LOC': 'local_obstime',
+        'FILTER': 'filter',
+        
+        # Weather fields (common)
+        'AMBTEMP': 'ambient_temperature',
+        'HUMIDITY': 'humidity',
+        'PRESSURE': 'pressure',
+        'DEWPOINT': 'dew_point',
+        'WINDDIR': 'wind_direction',
+        'WINDGUST': 'wind_gust',
+        'SKYTEMP': 'sky_temperature',
+        'RAINRATE': 'rain_rate',
+    }
+    
+    # Fields with different keywords but same meaning
+    NINA_TO_TCSPY = {
+        'CLOUDCVR': 'cloud_fraction',    # NINA: CLOUDCVR → TCSpy: CLUDFRAC
+        'MPSAS': 'sky_brightness',       # NINA: MPSAS → TCSpy: SKYBRGHT
+        'STARFWHM': 'fwhm',             # NINA: STARFWHM → TCSpy: SKYFWHM
+        'CENTALT': 'unit_alt', # NINA: CENTALT → TCSpy: ALTITUDE
+        'CENTAZ': 'unit_az',   # NINA: CENTAZ → TCSpy: AZIMUTH
+        'FOCPOS': 'focuser_position',    # NINA: FOCPOS → TCSpy: FOCUSPOS
+        'WINDSPD': 'wind_speed',         # NINA: WINDSPD (kph) → TCSpy: WINDSPED (m/s)
+    }
+    
+    # TCSpy-only fields (not available in NINA)
+    TCSPY_ONLY = {
+        'OBJTYPE': 'object_type',
+        'OBJCTID': 'object_id',
+        'OBJCTRA': 'object_ra_hms',
+        'OBJCTDEC': 'object_dec_dms',
+        'OBJCTRA_': 'object_ra',
+        'OBJCTDE_': 'object_dec',
+        'OBJCTALT': 'object_alt',
+        'OBJCTAZ': 'object_az',
+        'OBJCTHA': 'object_ha',
+        'MOONSEP': 'moon_sep',
+        'MOONPHAS': 'moon_phase',
+        'OBSMODE': 'obsmode',
+        'SPECMODE': 'specmode',
+        'NTELSCOP': 'ntels',
+        'IS_TOO': 'is_too',
+        'AFVALUE': 'af_value',
+        'AFERROR': 'af_error',
+        'AFTIME': 'af_time',
+        'DATE-WEA': 'weather_update_time',
+        'NOTE': 'obsnote',
+        'IMAGEID': 'image_id',
+        'JD': 'jd',
+        'MJD': 'mjd',
+        'CLUDFRAC': 'cloud_fraction',
+        'SKYBRGHT': 'sky_brightness',
+        'SKYFWHM': 'fwhm',
+        'ALTITUDE': 'unit_alt',
+        'AZIMUTH': 'unit_az',
+        'FOCUSPOS': 'focuser_position',
+        'WINDSPED': 'wind_speed',
+    }
+    
+    # NINA-only fields (not available in TCSpy)
+    NINA_ONLY = {
+        'HFR': 'nina_hfr',
+        'STAR_SENSITIVITY': 'nina_star_detection_sensitivity',
+        'GUIDING': 'guiding_enabled',
+        'GUIDING_RMS_RA': 'guiding_rms_ra',
+        'GUIDING_RMS_DEC': 'guiding_rms_dec',
+        'GUIDING_RMS_TOTAL': 'guiding_rms_total',
+        'PLTSOLVD': 'plate_solved',
+        'PLTSOLVD_RA': 'plate_solve_ra',
+        'PLTSOLVD_DEC': 'plate_solve_dec',
+        'PLTSOLVD_ANG': 'plate_solve_angle',
+        'PLTSOLVD_PIX': 'plate_solve_pixel_scale',
+        'SEQUENCE_TITLE': 'sequence_title',
+        'SEQUENCE_TARGET': 'sequence_target',
+        'WEATHER_AGE': 'weather_age',
+        'WEATHER_STATION': 'weather_station',
+        'NOTES': 'obsnote',  # Different from TCSpy NOTE
+    }
+    
+    # Unit conversions needed
+    UNIT_CONVERSIONS = {
+        'WINDSPD': {  # NINA wind speed: kph → m/s
+            'from_unit': 'kph',
+            'to_unit': 'm/s',
+            'conversion': lambda x: float(x) / 3.6
+        }
+    }
+
+
+
+class FrameManager:
+    """
+    Simplified frame management system for efficient RAW image import.
+    
+    Features:
+    - Fast sequential import for daily operations
+    - Parallel bulk import for large datasets (1.5M+ files)
+    - Complete FITS header parsing for all frame information
+    - Smart frame type detection from filename
+    - Proper error handling and progress reporting
+    """
+
+    @staticmethod
+    def _calculate_data_completeness(frame):
+        """Calculate data completeness percentage for a frame."""
+        fields_to_check = [
+            'object_ra', 'object_dec', 'airmass', 'ambient_temperature',
+            'humidity', 'wind_speed', 'focuser_position', 'fwhm'
+        ]
+        
+        populated_fields = sum(1 for field in fields_to_check if getattr(frame, field) is not None)
+        return int((populated_fields / len(fields_to_check)) * 100)
+    
+    @staticmethod
+    def import_files(file_paths, night, parallel=False, max_workers=4, progress_callback=None):
+        """
+        Main import method - choose sequential or parallel based on dataset size.
+        
+        Parameters:
+        -----------
+        file_paths : list
+            List of FITS file paths to import
+        night : Night
+            Night object for the observation date
+        parallel : bool
+            Force parallel processing (auto-enabled for 100k+ files)
+        max_workers : int
+            Number of worker processes for parallel mode
+        progress_callback : callable, optional
+            Progress callback function(processed, total, stats)
+            
+        Returns:
+        --------
+        dict : Import results with statistics
+        """
+        total_files = len(file_paths)
+        
+        # Auto-enable parallel for large datasets
+        if total_files >= 100000 or parallel:
+            print(f"🚀 Using parallel import for {total_files} files with {max_workers} workers")
+            return FrameManager._parallel_import(file_paths, night, max_workers, progress_callback)
+        else:
+            print(f"🔄 Using sequential import for {total_files} files")
+            return FrameManager._sequential_import(file_paths, night, progress_callback)
+    
+    @staticmethod
+    def _sequential_import(file_paths, night, progress_callback=None):
+        """
+        Fast sequential import for daily operations with complete header parsing.
+        
+        This method processes files in optimized batches, creates frame objects,
+        and ensures all FITS header information is properly extracted.
+        """
+        from django.db import transaction
+        
+        start_time = time.time()
+        results = {
+            'total': len(file_paths),
+            'imported': 0,
+            'existing': 0,
+            'failed': 0,
+            'frame_types': defaultdict(int),
+            'errors': []
+        }
+        
+        print(f"📁 Processing {len(file_paths)} files sequentially...")
+        
+        # Process in optimized batches for memory efficiency
+        batch_size = 50  # Smaller batch for better FITS parsing
+        for i in range(0, len(file_paths), batch_size):
+            batch = file_paths[i:i + batch_size]
+            
+            try:
+                with transaction.atomic():
+                    batch_result = FrameManager._process_batch_with_headers(batch, night)
+                    
+                    # Merge results
+                    results['imported'] += batch_result['imported']
+                    results['existing'] += batch_result['existing']
+                    results['failed'] += batch_result['failed']
+                    
+                    for frame_type, count in batch_result['frame_types'].items():
+                        results['frame_types'][frame_type] += count
+                    
+                    results['errors'].extend(batch_result['errors'])
+                
+                # Progress reporting every 10 batches
+                if (i // batch_size + 1) % 10 == 0:
+                    processed = min(i + batch_size, len(file_paths))
+                    elapsed = time.time() - start_time
+                    rate = processed / elapsed if elapsed > 0 else 0
+                    print(f"  📈 {processed}/{len(file_paths)} ({processed/len(file_paths)*100:.1f}%) "
+                          f"Rate: {rate:.1f} files/s")
+                
+                # Progress callback every 5 batches
+                if progress_callback and i % (batch_size * 5) == 0:
+                    processed = min(i + batch_size, len(file_paths))
+                    progress_callback(processed, len(file_paths), results)
+                
+            except Exception as e:
+                results['failed'] += len(batch)
+                results['errors'].append(f"Batch {i//batch_size + 1} failed: {e}")
+                print(f"  ❌ Batch {i//batch_size + 1} failed: {e}")
+        
+        results['processing_time'] = time.time() - start_time
+        return results
+    
+    @staticmethod
+    def _parallel_import(file_paths, night, max_workers=4, progress_callback=None):
+        """
+        Parallel import for large datasets (1.5M+ files) with header parsing.
+        
+        Splits work into chunks and processes them sequentially to avoid
+        database connection issues while maintaining efficiency.
+        """
+        start_time = time.time()
+        
+        # Conservative worker count for database stability
+        max_workers = min(max_workers, mp.cpu_count() // 2, 6)
+        
+        # Split into larger chunks for efficiency
+        chunk_size = max(500, len(file_paths) // max_workers)
+        chunks = [file_paths[i:i + chunk_size] for i in range(0, len(file_paths), chunk_size)]
+        
+        results = {
+            'total': len(file_paths),
+            'imported': 0,
+            'existing': 0,
+            'failed': 0,
+            'frame_types': defaultdict(int),
+            'errors': []
+        }
+        
+        print(f"📦 Processing {len(chunks)} chunks with {max_workers} workers...")
+        
+        # Process chunks sequentially to avoid DB connection issues
+        for i, chunk in enumerate(chunks):
+            print(f"  📦 Processing chunk {i+1}/{len(chunks)} ({len(chunk)} files)")
+            
+            try:
+                chunk_result = FrameManager._process_chunk_with_headers(chunk, night.id)
+                
+                # Merge results
+                results['imported'] += chunk_result['imported']
+                results['existing'] += chunk_result['existing']
+                results['failed'] += chunk_result['failed']
+                
+                for frame_type, count in chunk_result['frame_types'].items():
+                    results['frame_types'][frame_type] += count
+                
+                results['errors'].extend(chunk_result['errors'])
+                
+                # Progress update
+                processed = sum(len(chunks[j]) for j in range(i+1))
+                elapsed = time.time() - start_time
+                rate = processed / elapsed if elapsed > 0 else 0
+                
+                print(f"  ✅ Chunk {i+1} done: +{chunk_result['imported']} imported, "
+                      f"+{chunk_result['existing']} existing, +{chunk_result['failed']} failed")
+                print(f"  📈 Progress: {processed}/{len(file_paths)} ({processed/len(file_paths)*100:.1f}%) "
+                      f"Rate: {rate:.1f} files/s")
+                
+                if progress_callback:
+                    progress_callback(processed, len(file_paths), results)
+                
+            except Exception as e:
+                results['failed'] += len(chunk)
+                results['errors'].append(f"Chunk {i+1} failed: {e}")
+                print(f"  ❌ Chunk {i+1} failed: {e}")
+        
+        results['processing_time'] = time.time() - start_time
+        return results
+    
+    @staticmethod
+    def _process_chunk_with_headers(file_paths, night_id):
+        """
+        Process a chunk of files in a separate process with complete header parsing.
+        
+        This function is called in parallel processing mode and ensures
+        Django is properly initialized in each process.
+        """
+        import django
+        import os
+        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'gwportal.settings')
+        django.setup()
+        
+        from django.db import transaction, connection
+        from survey.models import Night
+        
+        try:
+            # Get night object
+            night = Night.objects.get(id=night_id)
+            
+            results = {
+                'imported': 0,
+                'existing': 0,
+                'failed': 0,
+                'frame_types': defaultdict(int),
+                'errors': []
+            }
+            
+            # Process in smaller batches within chunk for memory management
+            batch_size = 25
+            for i in range(0, len(file_paths), batch_size):
+                batch = file_paths[i:i + batch_size]
+                
+                try:
+                    with transaction.atomic():
+                        batch_result = FrameManager._process_batch_with_headers(batch, night)
+                        
+                        # Merge results
+                        results['imported'] += batch_result['imported']
+                        results['existing'] += batch_result['existing']
+                        results['failed'] += batch_result['failed']
+                        
+                        for frame_type, count in batch_result['frame_types'].items():
+                            results['frame_types'][frame_type] += count
+                        
+                        results['errors'].extend(batch_result['errors'])
+                        
+                except Exception as e:
+                    results['failed'] += len(batch)
+                    results['errors'].append(f"Batch processing error: {e}")
+            
+            return results
+            
+        finally:
+            connection.close()
+    
+    @staticmethod
+    def _process_batch_with_headers(file_paths, night):
+        """
+        Process a batch of files with complete FITS header parsing.
+        
+        This method creates frame objects and immediately parses their FITS headers
+        to ensure all ObservationFrame functionality is available.
+        """
+        results = {
+            'imported': 0,
+            'existing': 0,
+            'failed': 0,
+            'frame_types': defaultdict(int),
+            'errors': []
+        }
+        
+        # Build caches for efficient lookups
+        units_cache = {unit.name: unit for unit in Unit.objects.all()}
+        filters_cache = {filter.name: filter for filter in Filter.objects.all()}
+        tiles_cache = {tile.name: tile for tile in Tile.objects.all()}
+        
+        # Process each file individually to ensure proper header parsing
+        for file_path in file_paths:
+            try:
+                filename = os.path.basename(file_path)
+                
+                # Quick existence check
+                if FrameManager._frame_exists(filename, night):
+                    results['existing'] += 1
+                    continue
+                
+                # Create frame with complete data extraction
+                frame = FrameManager._create_frame_with_headers(
+                    file_path, night, units_cache, filters_cache, tiles_cache
+                )
+                
+                if frame:
+                    results['imported'] += 1
+                    frame_type = type(frame).__name__.replace('Frame', '')
+                    results['frame_types'][frame_type] += 1
+                else:
+                    results['failed'] += 1
+                    results['errors'].append(f"Failed to create frame for {file_path}")
+                    
+            except Exception as e:
+                results['failed'] += 1
+                results['errors'].append(f"Error processing {file_path}: {e}")
+        
+        return results
+    
+    @staticmethod
+    def _create_frame_with_headers(file_path, night, units_cache, filters_cache, tiles_cache):
+        """
+        Create a single frame object with complete FITS header parsing.
+        
+        This method extracts all possible information from both filename and
+        FITS header to populate the ObservationFrame model completely.
+        """
+        filename = os.path.basename(file_path)
+        
+        try:
+            # Parse filename for basic information
+            analyzer = FilenamePatternAnalyzer(filename)
+            
+            # Extract basic frame data
+            frame_data = FrameManager._extract_complete_frame_data(
+                file_path, night, analyzer, units_cache, filters_cache, tiles_cache
+            )
+            
+            if not frame_data:
+                return None
+            
+            # Get frame class and create object
+            frame_class = frame_data.pop('frame_class')
+            frame = frame_class.objects.create(**frame_data)
+            
+            # Parse FITS header immediately after creation
+            try:
+                frame.parse_fits_header()
+                frame.header_parsed = True
+                
+                # Generate unified filename and image ID if methods exist
+                if hasattr(frame, 'generate_unified_filename'):
+                    if not frame.unified_filename:
+                        frame.unified_filename = frame.generate_unified_filename()
+                
+                if hasattr(frame, 'generate_image_id'):
+                    if not frame.image_id:
+                        frame.image_id = frame.generate_image_id()
+                
+                # Save all changes
+                frame.save()
+                
+            except Exception as e:
+                # Even if header parsing fails, keep the frame with basic info
+                frame.header_parsed = False
+                frame.save(update_fields=['header_parsed'])
+                print(f"  ⚠️ Header parsing failed for {filename}: {e}")
+            
+            return frame
+            
+        except Exception as e:
+            print(f"  ❌ Frame creation failed for {filename}: {e}")
+            return None
+    
+    @staticmethod
+    def _extract_complete_frame_data(file_path, night, analyzer, units_cache, filters_cache, tiles_cache):
+        """
+        Extract complete frame data from both filename and FITS header.
+        
+        This method attempts to extract as much information as possible
+        from both the filename and FITS header to populate all frame fields.
+        """
+        filename = os.path.basename(file_path)
+        
+        try:
+            # Get observation time from filename first, then try FITS header
+            obstime = analyzer.extract_timestamp()
+            if not obstime:
+                obstime = FrameManager._extract_obstime_from_fits(file_path)
+            
+            if obstime and obstime.tzinfo is None:
+                obstime = pytz.UTC.localize(obstime)
+            elif not obstime:
+                obstime = timezone.now()
+            
+            # Get unit information
+            unit_name = FrameManager._get_unit_name(filename, file_path)
+            unit = units_cache.get(unit_name)
+            if not unit:
+                unit, _ = Unit.objects.get_or_create(
+                    name=unit_name,
+                    defaults={
+                        'is_active': True,
+                        'description': f'Seven Degree Telescope {unit_name[-2:]}'
+                    }
+                )
+                units_cache[unit_name] = unit
+
+            header_info = {}
+            try:
+                with fits.open(file_path) as hdul:
+                    header = hdul[0].header
+                
+                    # Use enhanced header extraction
+                    header_info = FrameManager.extract_header_info(header)
+                
+                    # Get exposure time from enhanced parsing
+                    exptime = header_info.get('exposure_time') or FrameManager._get_exposure_time_complete(analyzer, filename, file_path)
+                
+                    # Determine frame type using enhanced header info
+                    frame_type = FrameManager._get_frame_type(analyzer, filename)
+                
+            except Exception as e:
+                print(f"  ⚠️ FITS header reading failed for {filename}: {e}")
+                # Fallback to filename-based extraction
+                exptime = FrameManager._get_exposure_time_complete(analyzer, filename, file_path)
+                frame_type = FrameManager._get_frame_type(analyzer, filename)
+                header_info = {}
+        
+            frame_class = FrameManager._get_frame_class(frame_type)
+            
+            # Build comprehensive frame data
+            frame_data = {
+                'original_filename': filename,
+                'file_path': file_path,
+                'file_size': os.path.getsize(file_path),
+                'unit': unit,
+                'night': night,
+                'obstime': obstime,
+                'filename_pattern': analyzer.filename_pattern or 'unknown',
+                'filename_metadata': analyzer.parsed_filename or {},
+                'exptime': exptime,
+                'gain': header_info.get('gain', 2750),  # Use header info if available
+                'binning_x': header_info.get('binning_x', 1),
+                'binning_y': header_info.get('binning_y', 1),
+                'header_parsed': False,  # Will be set to True after successful parsing
+                'frame_class': frame_class
+            }
+
+            
+            # Add filter information for frames that need it
+            if frame_type in ['FLAT', 'LIGHT']:
+                filter_obj = None
+
+                filter_name = header_info.get('filter_name')
+                if filter_name and filter_name.strip() and filter_name not in ['UNKNOWN', '', 'None']:
+                    filter_name = filter_name.strip()
+                    filter_obj = filters_cache.get(filter_name)
+                    if not filter_obj:
+                        filter_obj, _ = Filter.objects.get_or_create(name=filter_name)
+                        filters_cache[filter_name] = filter_obj
+
+                if not filter_obj:
+                    filter_obj = FrameManager._get_filter_object(analyzer, filename, file_path, filters_cache)
+
+                if not filter_obj:
+                    # Create a default filter based on common patterns or use 'unknown'
+                    default_filter_name = 'unknown'
+                    filter_obj = filters_cache.get(default_filter_name)
+                    if not filter_obj:
+                        filter_obj, _ = Filter.objects.get_or_create(name=default_filter_name)
+                        filters_cache[default_filter_name] = filter_obj
+                    print(f"  ⚠️ No filter found for {filename}, using '{default_filter_name}'")
+    
+                frame_data['filter'] = filter_obj
+
+            # Add science-specific data
+            if frame_type == 'LIGHT':
+                science_data = FrameManager._get_complete_science_data(
+                    analyzer, filename, file_path, tiles_cache
+                )
+
+                if header_info.get('object_ra') is not None:
+                    frame_data['object_ra'] = header_info['object_ra']
+        
+                if header_info.get('object_dec') is not None:
+                    frame_data['object_dec'] = header_info['object_dec']
+        
+                if header_info.get('object_ra_hms'):
+                    frame_data['object_ra_hms'] = header_info['object_ra_hms']
+        
+                if header_info.get('object_dec_dms'):
+                    frame_data['object_dec_dms'] = header_info['object_dec_dms']
+
+                if header_info.get('object_type'):
+                    frame_data['object_type'] = header_info['object_type']
+                
+                if header_info.get('object_id'):
+                    frame_data['object_id'] = header_info['object_id']
+
+                frame_data.update(science_data)
+            
+            return frame_data
+            
+        except Exception as e:
+            print(f"  ⚠️ Complete data extraction failed for {filename}: {e}")
+            return None
+    
+    @staticmethod
+    def _extract_obstime_from_fits(file_path):
+        """
+        Extract observation time directly from FITS header.
+        
+        Attempts to read observation time from common FITS keywords.
+        """
+        try:
+            from astropy.io import fits
+            from astropy.time import Time
+            
+            with fits.open(file_path) as hdul:
+                header = hdul[0].header
+                
+                # Try common observation time keywords
+                for keyword in ['DATE-OBS', 'OBSTIME', 'UTC']:
+                    if keyword in header:
+                        obs_str = header[keyword]
+                        if isinstance(obs_str, str) and obs_str.strip():
+                            try:
+                                # Parse using astropy Time
+                                t = Time(obs_str, format='isot')
+                                return t.datetime
+                            except Exception:
+                                # Try simple datetime parsing
+                                from datetime import datetime
+                                return datetime.fromisoformat(obs_str.replace('T', ' '))
+                
+        except Exception:
+            pass  # Ignore FITS reading errors
+        
+        return None
+    
+    @staticmethod
+    def _get_exposure_time_complete(analyzer, filename, file_path):
+        """
+        Get exposure time from multiple sources with priority order.
+        
+        Priority: 1) FITS header, 2) Parsed filename, 3) Regex on filename
+        """
+        # Try FITS header first (most reliable)
+        try:
+            from astropy.io import fits
+            with fits.open(file_path) as hdul:
+                header = hdul[0].header
+                for keyword in ['EXPTIME', 'EXPOSURE', 'EXPOS']:
+                    if keyword in header:
+                        return float(header[keyword])
+        except Exception:
+            pass
+        
+        # Try parsed filename
+        if analyzer and analyzer.parsed_filename:
+            exptime = analyzer.parsed_filename.get('exptime')
+            if exptime:
+                try:
+                    return float(exptime)
+                except ValueError:
+                    pass
+        
+        # Try regex on filename
+        import re
+        match = re.search(r'(\d+\.?\d*)s', filename)
+        if match:
+            try:
+                return float(match.group(1))
+            except ValueError:
+                pass
+        
+        return 0.0  # Default fallback
+    
+    @staticmethod
+    def _get_filter_object(analyzer, filename, file_path, filters_cache):
+        """
+        Get filter object from multiple sources.
+        
+        Attempts to determine filter from FITS header, parsed filename, and filename patterns.
+        """
+        filter_name = None
+        
+        # Try FITS header first
+        try:
+            from astropy.io import fits
+            with fits.open(file_path) as hdul:
+                header = hdul[0].header
+                for keyword in ['FILTER', 'FILTNAME', 'FILTERS']:
+                    if keyword in header:
+                        filter_name = str(header[keyword]).strip()
+                        break
+        except Exception:
+            pass
+        
+        # Try parsed filename if FITS header didn't work
+        if not filter_name and analyzer and analyzer.parsed_filename:
+            filter_name = analyzer.parsed_filename.get('filter')
+        
+        # Try filename pattern matching
+        if not filter_name:
+            filter_name = FrameManager._get_filter_name_from_pattern(filename)
+        
+        # Get or create filter object
+        if filter_name:
+            filter_obj = filters_cache.get(filter_name)
+            if not filter_obj:
+                filter_obj, _ = Filter.objects.get_or_create(name=filter_name)
+                filters_cache[filter_name] = filter_obj
+            return filter_obj
+        
+        # Default filter for frames that require it
+        filter_obj = filters_cache.get('unknown')
+        if not filter_obj:
+            filter_obj, _ = Filter.objects.get_or_create(name='unknown')
+            filters_cache['unknown'] = filter_obj
+        return filter_obj
+    
+    @staticmethod
+    def _get_filter_name_from_pattern(filename):
+        """Extract filter name from filename patterns."""
+        parts = filename.replace('.fits', '').replace('.fz', '').split('_')
+        
+        for part in parts:
+            # Standard photometric filters
+            if part in ['u', 'g', 'r', 'i', 'z']:
+                return part.lower()
+            # Medium-band filters
+            elif part.startswith('m') and part[1:].isdigit():
+                return part
+            # Other filter patterns
+            elif len(part) <= 6 and part.isalpha() and part.upper() not in ['FLAT', 'BIAS', 'DARK', 'LIGHT']:
+                return part.lower()
+        
+        return None
+    
+    @staticmethod
+    def _get_complete_science_data(analyzer, filename, file_path, tiles_cache):
+        """
+        Extract complete science frame data including object and tile information.
+        
+        Attempts to get object information from FITS header and filename.
+        """
+        data = {
+            'object_name': 'UNKNOWN',
+            'object_type': 'RIS',  # Default type
+        }
+        
+        # Try to get object name from FITS header first
+        try:
+            from astropy.io import fits
+            with fits.open(file_path) as hdul:
+                header = hdul[0].header
+                for keyword in ['OBJECT', 'OBJNAME', 'TARGET']:
+                    if keyword in header:
+                        object_name = str(header[keyword]).strip()
+                        if object_name:
+                            data['object_name'] = object_name
+                            break
+        except Exception:
+            pass
+        
+        # Try parsed filename if FITS header didn't work
+        if data['object_name'] == 'UNKNOWN' and analyzer and analyzer.parsed_filename:
+            object_name = (
+                analyzer.parsed_filename.get('object_info') or 
+                analyzer.parsed_filename.get('object_name')
+            )
+            if object_name:
+                data['object_name'] = object_name
+        
+        # Fallback to filename parsing
+        if data['object_name'] == 'UNKNOWN':
+            parts = filename.split('_')
+            if len(parts) >= 4:
+                data['object_name'] = parts[3]
+        
+        # Tile association with improved matching
+        object_name = data['object_name']
+        if object_name.startswith('T') and len(object_name) > 1:
+            try:
+                # Extract tile ID from object name
+                tile_id_str = ''.join(filter(str.isdigit, object_name[1:]))
+                if tile_id_str:
+                    tile_id = int(tile_id_str)
+                    
+                    # Look for tile in cache with various formats
+                    tile_name_formats = [
+                        f"T{tile_id:05d}",  # T00001
+                        f"T{tile_id:04d}",  # T0001
+                        f"T{tile_id}",      # T1
+                        object_name         # Exact match
+                    ]
+                    
+                    for tile_name in tile_name_formats:
+                        tile = tiles_cache.get(tile_name)
+                        if tile:
+                            data['tile'] = tile
+                            break
+                    
+                    # If not in cache, try database lookup
+                    if 'tile' not in data:
+                        tile = Tile.objects.filter(id=tile_id).first()
+                        if tile:
+                            data['tile'] = tile
+                            tiles_cache[tile.name] = tile
+                            
+            except (ValueError, AttributeError):
+                pass
+        
+        return data
+    
+    @staticmethod
+    def _frame_exists(filename, night):
+        """
+        Quick check if frame already exists in database.
+        
+        Checks all frame types for the given filename and night.
+        """
+        for frame_class in [ScienceFrame, BiasFrame, DarkFrame, FlatFrame]:
+            if frame_class.objects.filter(original_filename=filename, night=night).exists():
+                return True
+        return False
+    
+    @staticmethod
+    def _get_unit_name(filename, file_path):
+        """
+        Extract unit name from filename or path with multiple fallback strategies.
+        """
+        # Try filename first
+        if filename.startswith('7DT') and len(filename) >= 5:
+            return filename[:5]
+        
+        # Try path components
+        path_parts = file_path.split('/')
+        for part in path_parts:
+            if part.startswith('7DT') and len(part) >= 5:
+                return part[:5]
+        
+        return '7DT01'  # Default fallback
+    
+    @staticmethod
+    def _get_frame_type(analyzer, filename):
+        """
+        Determine frame type from filename with multiple detection methods.
+        
+        Uses parsed filename data first, then falls back to pattern matching.
+        """
+        # Try parsed filename first
+        if analyzer and analyzer.parsed_filename:
+            parsed = analyzer.parsed_filename
+            
+            # Check explicit frame type field
+            if 'frame_type' in parsed:
+                return parsed['frame_type'].upper()
+            
+            # Check object_info field for frame type indicators
+            if 'object_info' in parsed:
+                obj_info = parsed['object_info'].upper()
+                if 'FLAT' in obj_info or obj_info.startswith('FL'):
+                    return 'FLAT'
+                elif 'BIAS' in obj_info or obj_info.startswith('BI'):
+                    return 'BIAS'
+                elif 'DARK' in obj_info or obj_info.startswith('DA'):
+                    return 'DARK'
+                elif obj_info.startswith('T') and len(obj_info) > 1 and obj_info[1:].isdigit():
+                    return 'LIGHT'
+        
+        # Fallback: parse filename directly
+        parts = filename.upper().split('_')
+        for part in parts:
+            if part in ['FLAT', 'BIAS', 'DARK', 'LIGHT']:
+                return part
+            elif part.startswith('FL'):
+                return 'FLAT'
+            elif part.startswith('BI'):
+                return 'BIAS'
+            elif part.startswith('DA'):
+                return 'DARK'
+        
+        return 'LIGHT'  # Default to science frame
+    
+    @staticmethod
+    def _get_frame_class(frame_type):
+        """
+        Get appropriate Django model class for the frame type.
+        """
+        frame_class_map = {
+            'BIAS': BiasFrame,
+            'DARK': DarkFrame,
+            'FLAT': FlatFrame,
+            'LIGHT': ScienceFrame,
+        }
+        return frame_class_map.get(frame_type, ScienceFrame)
+    
+    @staticmethod
+    def quick_stats():
+        """
+        Get quick statistics about imported frames.
+        
+        Returns count of each frame type and total frames.
+        """
+        stats = {
+            'science': ScienceFrame.objects.count(),
+            'bias': BiasFrame.objects.count(),
+            'dark': DarkFrame.objects.count(),
+            'flat': FlatFrame.objects.count(),
+        }
+        stats['total'] = sum(stats.values())
+        return stats
+    
+    @staticmethod
+    def cleanup_duplicates(dry_run=True):
+        """
+        Find and optionally remove duplicate frames.
+        
+        Identifies frames with the same filename and night,
+        keeping the earliest created frame.
+        """
+        duplicates = []
+        
+        for frame_class in [ScienceFrame, BiasFrame, DarkFrame, FlatFrame]:
+            # Find duplicates by filename and night
+            dupes = frame_class.objects.values(
+                'original_filename', 'night'
+            ).annotate(
+                count=Count('id')
+            ).filter(count__gt=1)
+            
+            for dupe in dupes:
+                frames = frame_class.objects.filter(
+                    original_filename=dupe['original_filename'],
+                    night_id=dupe['night']
+                ).order_by('created_at')
+                
+                # Keep the first, mark others for deletion
+                duplicates.extend(frames[1:])
+        
+        if dry_run:
+            print(f"🔍 Found {len(duplicates)} duplicate frames (DRY RUN)")
+            for frame in duplicates[:5]:
+                print(f"  - {frame.original_filename} ({type(frame).__name__})")
+            if len(duplicates) > 5:
+                print(f"  ... and {len(duplicates) - 5} more")
+        else:
+            # Actually delete duplicates
+            for frame in duplicates:
+                frame.delete()
+            print(f"🗑️ Deleted {len(duplicates)} duplicate frames")
+        
+        return len(duplicates)
+    
+    @staticmethod
+    def validate_imported_frames(night, sample_size=10):
+        """
+        Validate that imported frames have complete information.
+        
+        Checks a sample of frames to ensure FITS header parsing worked correctly.
+        """
+        validation_results = {
+            'total_checked': 0,
+            'header_parsed': 0,
+            'missing_info': [],
+            'validation_passed': True
+        }
+        
+        for frame_class in [ScienceFrame, BiasFrame, DarkFrame, FlatFrame]:
+            frames = frame_class.objects.filter(night=night)[:sample_size]
+            
+            for frame in frames:
+                validation_results['total_checked'] += 1
+                
+                if frame.header_parsed:
+                    validation_results['header_parsed'] += 1
+                
+                # Check for missing critical information
+                missing_fields = []
+                if not frame.exptime or frame.exptime == 0:
+                    missing_fields.append('exptime')
+                if hasattr(frame, 'filter') and not frame.filter:
+                    missing_fields.append('filter')
+                if not frame.obstime:
+                    missing_fields.append('obstime')
+                
+                if missing_fields:
+                    validation_results['missing_info'].append({
+                        'filename': frame.original_filename,
+                        'missing_fields': missing_fields
+                    })
+                    validation_results['validation_passed'] = False
+        
+        return validation_results
+
+    @staticmethod
+    def extract_header_info(header):
+        """
+        Extract object information from FITS header.
+        Enhanced to support both TCSpy and NINA header formats.
+        
+        TCSpy format (primary standard):
+            OBJCTID  = Object identifier
+            OBJCTRA  = RA in HMS format  
+            OBJCTDEC = Dec in DMS format
+            OBJCTRA_ = Target RA in degrees
+            OBJCTDE_ = Target Dec in degrees
+        
+        NINA format (mapped to TCSpy standard):
+            OBJECT   = Object name
+            RA       = RA in degrees
+            DEC      = Dec in degrees
+            OBJCTRA  = RA in H M S format
+            OBJCTDEC = Dec in D M S format
+        """
+       
+        def parse_coordinate_string(coord_str, coord_type='ra'):
+            """Parse coordinate string in HMS/DMS format."""
+            if not coord_str:
+                return None
+        
+            coord_str = str(coord_str).strip()
+
+            # Handle HMS format: "08 09 50" or "08:09:50"
+            if coord_type == 'ra':
+                parts = coord_str.replace(':', ' ').split()
+                if len(parts) >= 3:
+                    try:
+                        h, m, s = float(parts[0]), float(parts[1]), float(parts[2])
+                        return (h + m/60.0 + s/3600.0) * 15.0  # Convert hours to degrees
+                    except ValueError:
+                        pass
+        
+            # Handle DMS format: "-29 43 01" or "-29:43:01"
+            elif coord_type == 'dec':
+                parts = coord_str.replace(':', ' ').split()
+                if len(parts) >= 3:
+                    try:
+                        d, m, s = float(parts[0]), float(parts[1]), float(parts[2])
+                        sign = -1 if d < 0 or coord_str.startswith('-') else 1
+                        return sign * (abs(d) + m/60.0 + s/3600.0)  # Convert to degrees
+                    except ValueError:
+                        pass
+        
+            # Try direct float conversion
+            try:
+                return float(coord_str)
+            except ValueError:
+                return None
+
+        # Extract object name
+        object_name = header.get('OBJECT') or header.get('OBJCTID', 'UNKNOWN')
+    
+        # === Enhanced coordinate extraction ===
+        object_ra = None
+        object_dec = None
+        object_ra_hms = None
+        object_dec_dms = None
+
+        # Method 1: TCSpy style (degrees) - highest priority
+        try:
+            object_ra = float(header['OBJCTRA_']) if 'OBJCTRA_' in header else None
+            object_dec = float(header['OBJCTDE_']) if 'OBJCTDE_' in header else None
+        except (ValueError, TypeError):
+            pass
+
+        # Method 2: NINA style (HMS/DMS strings) - second priority
+        if object_ra is None and 'OBJCTRA' in header:
+            objctra_str = header['OBJCTRA']
+            if objctra_str:
+                object_ra = parse_coordinate_string(objctra_str, 'ra')
+ 
+        if object_dec is None and 'OBJCTDEC' in header:
+            objctdec_str = header['OBJCTDEC']
+            if objctdec_str:
+                object_dec = parse_coordinate_string(objctdec_str, 'dec')
+
+        # Method 3: Standard RA/DEC (degrees) - third priority
+        if object_ra is None and 'RA' in header:
+            try:
+                object_ra = float(header['RA'])
+            except (ValueError, TypeError):
+                pass
+    
+        if object_dec is None and 'DEC' in header:
+            try:
+                object_dec = float(header['DEC'])
+            except (ValueError, TypeError):
+                pass
+ 
+        # Extract other header information with enhanced compatibility
+        exposure_time = None
+        for exp_key in ['EXPTIME', 'EXPOSURE']:
+            if exp_key in header:
+                try:
+                    exposure_time = float(header[exp_key])
+                    break
+                except (ValueError, TypeError):
+                    continue
+        
+        # Extract filter information with multiple keyword support
+        filter_name = None
+        for filter_key in ['FILTER', 'FILTNAM', 'FILTERS']:
+            if filter_key in header:
+                raw_filter = header[filter_key]
+                filter_name = str(raw_filter).strip()
+                if filter_name and filter_name not in ['', 'UNKNOWN', 'None']:
+                    break
+    
+        if not filter_name:
+            print(f"    ⚠️ DEBUG: No filter found in header for {object_name}")
+        
+        # Extract date/time information
+        date_obs = header.get('DATE-OBS')
+        
+        # Extract telescope/instrument information
+        telescope = header.get('TELESCOP', 'UNKNOWN')
+        instrument = header.get('INSTRUME', 'UNKNOWN')
+        
+        # Extract image type with multiple keyword support
+        imagetyp = None
+        for img_key in ['IMAGETYP', 'OBSTYPE', 'FRAME']:
+            if img_key in header:
+                imagetyp = str(header[img_key]).strip().upper()
+                break
+        
+        if not imagetyp:
+            imagetyp = 'UNKNOWN'
+        
+        # Extract gain information with multiple keyword support
+        gain = None
+        for gain_key in ['GAIN', 'EGAIN']:
+            if gain_key in header:
+                try:
+                    gain = float(header[gain_key])
+                    break
+                except (ValueError, TypeError):
+                    continue
+        
+        # Extract temperature information with multiple keyword support
+        ccd_temp = None
+        for temp_key in ['CCD-TEMP', 'TEMP', 'CCDTEMP']:
+            if temp_key in header:
+                try:
+                    ccd_temp = float(header[temp_key])
+                    break
+                except (ValueError, TypeError):
+                    continue
+        
+        # Extract binning information
+        binning_x = header.get('XBINNING', 1)
+        binning_y = header.get('YBINNING', 1)
+        
+        # Extract pixel scale information
+        pixscale_x = header.get('XPIXSZ')
+        pixscale_y = header.get('YPIXSZ')
+        
+        # Extract airmass
+        airmass = header.get('AIRMASS')
+        
+        # Detect software used for enhanced compatibility
+        software_used = 'unknown'
+        if 'SWCREATE' in header and 'N.I.N.A' in str(header['SWCREATE']):
+            software_used = 'nina'
+        elif 'LOGPATH' in header and 'tcspy' in str(header.get('LOGPATH', '')):
+            software_used = 'tcspy'
+        
+        return {
+            'object_name': object_name,
+            'object_ra': object_ra,
+            'object_dec': object_dec,
+            'exposure_time': exposure_time,
+            'filter_name': filter_name,
+            'date_obs': date_obs,
+            'telescope': telescope,
+            'instrument': instrument,
+            'imagetyp': imagetyp,
+            'gain': gain,
+            'ccd_temp': ccd_temp,
+            'binning_x': binning_x,
+            'binning_y': binning_y,
+            'pixscale_x': pixscale_x,
+            'pixscale_y': pixscale_y,
+            'airmass': airmass,
+            'software_used': software_used
+        }

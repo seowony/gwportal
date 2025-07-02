@@ -1,0 +1,975 @@
+# Base class for all observation frames
+class ObservationFrame(models.Model):
+    """
+    Abstract base class for all astronomical observation frames
+    
+    This provides common fields and logic for all types of observation frames
+    (bias, dark, flat, science) while enabling specialized behavior in subclasses.
+    """
+    # Hardware configuration - links to the facility app
+    unit = models.ForeignKey(Unit, on_delete=models.CASCADE,
+                           help_text="The telescope unit that took this frame")
+    camera = models.ForeignKey(Camera, on_delete=models.CASCADE,
+                             help_text="The camera used to take this frame")
+    
+    # Night reference - for grouping observations by night
+    night = models.ForeignKey(Night, on_delete=models.CASCADE, 
+                            null=True, blank=True,
+                            help_text="The observing night when this frame was taken")
+    
+    # Timestamps
+    observation_date = models.DateField(db_index=True)
+    timestamp = models.DateTimeField(db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    # Camera settings
+    gain = models.IntegerField(help_text="Camera gain setting")
+    binning = models.CharField(max_length=10, help_text="Binning mode (e.g., '1x1', '2x2')")
+    temperature = models.FloatField(help_text="CCD temperature")
+    
+    # File information
+    file_path = models.CharField(max_length=255)
+    file_size = models.BigIntegerField(help_text="File size in bytes", null=True, blank=True)
+    file_modification_time = models.DateTimeField(null=True, blank=True, 
+                                               help_text="Last modification time of the file")
+
+    # Weather conditions at time of observation
+    weather = models.ForeignKey(Weather, on_delete=models.SET_NULL, null=True, blank=True,
+                               help_text="Weather conditions during observation")
+
+    class Meta:
+        abstract = True
+        indexes = [
+            models.Index(fields=['unit', 'observation_date']),
+            models.Index(fields=['night']),
+            models.Index(fields=['gain', 'binning']),
+            models.Index(fields=['timestamp']),
+        ]
+    
+    def __str__(self):
+        return f"{self.__class__.__name__}: {self.unit.name} - {self.timestamp.strftime('%Y-%m-%d %H:%M:%S')}"
+    
+    @property
+    def file_name(self):
+        return os.path.basename(self.file_path)
+    
+    def save(self, *args, **kwargs):
+        # Set observation date from timestamp if not set
+        if not self.observation_date and self.timestamp:
+            self.observation_date = self.timestamp.date()
+            
+        # Link to the appropriate Night record
+        if not self.night and self.observation_date:
+            # Convert to Chile timezone for determining the night
+            if self.timestamp:
+                chile_datetime = self.timestamp.astimezone(CHILE_TIMEZONE)
+                # If time is before noon, consider it part of the previous night
+                if chile_datetime.hour < 12:
+                    chile_date = chile_datetime.date() - datetime.timedelta(days=1)
+                else:
+                    chile_date = chile_datetime.date()
+                self.night = Night.get_or_create_for_date(chile_date)
+            else:
+                self.night = Night.get_or_create_for_date(self.observation_date)
+            
+        # Get file size if file exists
+        if not self.file_size and os.path.exists(self.file_path):
+            self.file_size = os.path.getsize(self.file_path)
+            self.file_modification_time = datetime.datetime.fromtimestamp(
+                os.path.getmtime(self.file_path)
+            )
+            
+        super().save(*args, **kwargs)
+        
+        # After saving, update related statistics
+        if self.night:
+            try:
+                self.night.update_statistics()
+            except Exception as e:
+                # Log error but don't block save
+                print(f"Error updating night statistics: {e}")
+            
+        # Update unit statistics
+        try:
+            unit_stats, created = UnitStatistics.objects.get_or_create(unit=self.unit)
+            unit_stats.update_statistics()
+        except Exception as e:
+            # Log error but don't block save
+            print(f"Error updating unit statistics: {e}")
+
+
+# Calibration frames
+class BiasFrame(ObservationFrame):
+    """Bias frames - zero second exposures"""
+    exptime = models.FloatField(default=0, help_text="Always 0 for bias frames")
+
+    class Meta:
+        verbose_name = "Bias Frame"
+        verbose_name_plural = "Bias Frames"
+        
+    def save(self, *args, **kwargs):
+        self.exptime = 0  # Ensure bias frames always have 0 exposure time
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Bias: {self.unit.name} ({self.timestamp.strftime('%Y-%m-%d %H:%M:%S')})"
+
+
+class DarkFrame(ObservationFrame):
+    """Dark frames - closed shutter exposures"""
+    exptime = models.FloatField(help_text="Exposure time in seconds")
+    dark_current = models.FloatField(null=True, blank=True, help_text="Measured dark current")
+    
+    class Meta:
+        verbose_name = "Dark Frame"
+        verbose_name_plural = "Dark Frames"
+        indexes = [
+            models.Index(fields=['exptime']),
+        ]
+
+    def __str__(self):
+        return f"Dark {self.exptime}s: {self.unit.name} ({self.timestamp.strftime('%Y-%m-%d %H:%M:%S')})"
+
+
+class FlatFrame(ObservationFrame):
+    """Flat field frames - uniformly illuminated exposures"""
+    filter = models.ForeignKey(Filter, on_delete=models.CASCADE)
+    filter_wheel = models.ForeignKey(FilterWheel, on_delete=models.CASCADE)
+    exptime = models.FloatField(help_text="Exposure time in seconds")
+    sky_level = models.FloatField(null=True, blank=True, help_text="Mean sky level in ADU")
+    twilight = models.BooleanField(default=False, help_text="Whether this is a twilight flat")
+    sun_altitude = models.FloatField(null=True, blank=True, help_text="Solar altitude during exposure")
+
+    class Meta:
+        verbose_name = "Flat Field Frame"
+        verbose_name_plural = "Flat Field Frames"
+        indexes = [
+            models.Index(fields=['filter']),
+            models.Index(fields=['exptime']),
+        ]
+
+    def __str__(self):
+        return f"Flat {self.filter.name}: {self.unit.name} ({self.timestamp.strftime('%Y-%m-%d %H:%M:%S')})"
+
+
+class ScienceFrame(ObservationFrame):
+    """Science/Light frames - actual observations"""
+    # Target information
+    object_name = models.CharField(max_length=100, db_index=True)
+    ra = models.FloatField(help_text="Right Ascension in degrees")
+    dec = models.FloatField(help_text="Declination in degrees")
+    
+    # Observation settings
+    filter = models.ForeignKey(Filter, on_delete=models.CASCADE)
+    filter_wheel = models.ForeignKey(FilterWheel, on_delete=models.CASCADE)
+    exptime = models.FloatField(help_text="Exposure time in seconds")
+    
+    # Housekeeping data
+    airmass = models.FloatField(null=True, blank=True)
+    seeing = models.FloatField(null=True, blank=True, help_text="Image FWHM in arcseconds")
+    
+    # Tile reference
+    tile = models.ForeignKey(Tile, on_delete=models.SET_NULL, null=True, blank=True,
+                           related_name='science_frames')
+    
+    # Quality flags
+    quality_flag = models.CharField(max_length=20, default="unchecked", 
+                                  choices=[
+                                      ("unchecked", "Not Checked"),
+                                      ("good", "Good"),
+                                      ("marginal", "Marginal"),
+                                      ("bad", "Bad")
+                                  ])
+    
+    # Processing state
+    processed = models.BooleanField(default=False, help_text="Whether this frame has been processed")
+    
+    class Meta:
+        verbose_name = "Science Frame"
+        verbose_name_plural = "Science Frames"
+        indexes = [
+            models.Index(fields=['object_name']),
+            models.Index(fields=['filter']),
+            models.Index(fields=['quality_flag']),
+            models.Index(fields=['processed']),
+            models.Index(fields=['ra', 'dec']),
+        ]
+        
+    def save(self, *args, **kwargs):
+        # Find containing tile if not set and coordinates are available
+        if not self.tile and self.ra is not None and self.dec is not None:
+            try:
+                self.tile = Tile.objects.filter(vertices__contains=Point(self.ra, self.dec)).first()
+            except:
+                # Fall back to all tiles and check manually
+                for tile in Tile.objects.all():
+                    if tile.contains_point(self.ra, self.dec):
+                        self.tile = tile
+                        break
+            
+        # Normalize RA/Dec
+        if self.ra is not None:
+            self.ra = self.ra % 360.0
+        if self.dec is not None:
+            self.dec = max(-90.0, min(90.0, self.dec))
+            
+        # Call parent save method which updates statistics
+        super().save(*args, **kwargs)
+        
+        # Update tile statistics
+        if self.tile:
+            try:
+                self.tile.update_statistics()
+            except Exception as e:
+                # Log error but don't block save
+                print(f"Error updating tile statistics: {e}")
+
+    def __str__(self):
+        return f"Science: {self.object_name} - {self.unit.name} ({self.timestamp.strftime('%Y-%m-%d %H:%M:%S')})"
+
+
+# Master calibration frames
+class MasterCalibrationBase(models.Model):
+    """Base class for all master calibration frames"""
+    # Basic information - crucially linked to a specific Unit
+    unit = models.ForeignKey(Unit, on_delete=models.CASCADE)
+    creation_date = models.DateField(auto_now_add=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    
+    # File information
+    file_path = models.CharField(max_length=255)
+    gain = models.IntegerField(help_text="Camera gain setting")
+    binning = models.CharField(max_length=10, help_text="Binning mode (e.g., '1x1', '2x2')")
+    
+    # Validity period
+    valid_from = models.DateField()
+    valid_until = models.DateField(null=True, blank=True)
+    
+    # Statistics
+    composited_frame_count = models.IntegerField(default=0)
+    mean_value = models.FloatField(null=True, blank=True)
+    std_dev = models.FloatField(null=True, blank=True)
+    
+    class Meta:
+        abstract = True
+        indexes = [
+            models.Index(fields=['unit', 'creation_date']),
+            models.Index(fields=['gain', 'binning']),
+            models.Index(fields=['valid_from', 'valid_until']),
+        ]
+    
+    @property
+    def file_name(self):
+        return os.path.basename(self.file_path)
+
+    def __str__(self):
+        return f"{self.__class__.__name__}: {self.unit.name} ({self.creation_date})"
+
+
+class MasterBias(MasterCalibrationBase):
+    """Master Bias frames"""
+    raw_frames = models.ManyToManyField(BiasFrame, related_name='master_biases')
+    readout_noise = models.FloatField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Master Bias"
+        verbose_name_plural = "Master Biases"
+
+    def __str__(self):
+        return f"Master Bias: {self.unit.name} ({self.creation_date}, {self.composited_frame_count} frames)"
+
+
+class MasterDark(MasterCalibrationBase):
+    """Master Dark frames"""
+    raw_frames = models.ManyToManyField(DarkFrame, related_name='master_darks')
+    exptime = models.FloatField(help_text="Exposure time in seconds")
+    dark_current = models.FloatField(null=True, blank=True)
+    
+    # Link to the master bias used in processing (if any)
+    master_bias = models.ForeignKey(MasterBias, on_delete=models.SET_NULL, null=True, blank=True, 
+                                   related_name='used_in_master_darks')
+    
+    class Meta:
+        verbose_name = "Master Dark"
+        verbose_name_plural = "Master Darks"
+        indexes = [
+            models.Index(fields=['exptime']),
+        ]
+
+    def __str__(self):
+        return f"Master Dark {self.exptime}s: {self.unit.name} ({self.creation_date})"
+
+
+class MasterFlat(MasterCalibrationBase):
+    """Master Flat frames"""
+    raw_frames = models.ManyToManyField(FlatFrame, related_name='master_flats')
+    filter = models.ForeignKey(Filter, on_delete=models.CASCADE)
+    filter_wheel = models.ForeignKey(FilterWheel, on_delete=models.CASCADE)
+    scaling_method = models.CharField(max_length=50, default='median')
+    
+    # Links to the calibrations used in processing
+    master_bias = models.ForeignKey(MasterBias, on_delete=models.SET_NULL, null=True, blank=True,
+                                   related_name='used_in_master_flats')
+    master_dark = models.ForeignKey(MasterDark, on_delete=models.SET_NULL, null=True, blank=True,
+                                   related_name='used_in_master_flats')
+    
+    class Meta:
+        verbose_name = "Master Flat"
+        verbose_name_plural = "Master Flats"
+        indexes = [
+            models.Index(fields=['filter']),
+        ]
+
+    def __str__(self):
+        return f"Master Flat {self.filter.name}: {self.unit.name} ({self.creation_date})"
+
+
+# Processed science data
+class ProcessedScienceImage(models.Model):
+    """Individual processed science image"""
+    # Link to raw data
+    raw_frame = models.ForeignKey(ScienceFrame, on_delete=models.CASCADE, related_name='processed_versions')
+    
+    # Processing information
+    processed_date = models.DateTimeField(auto_now_add=True, db_index=True)
+    processor_version = models.CharField(max_length=50, help_text="Version of processing software")
+    
+    # File structure
+    file_path = models.CharField(max_length=255, unique=True) 
+    file_size = models.BigIntegerField(help_text="File size in bytes", null=True, blank=True)
+    
+    # Used calibration frames - all from the SAME UNIT as the raw frame
+    master_bias = models.ForeignKey(MasterBias, on_delete=models.SET_NULL, null=True, blank=True)
+    master_dark = models.ForeignKey(MasterDark, on_delete=models.SET_NULL, null=True, blank=True)
+    master_flat = models.ForeignKey(MasterFlat, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    # Processing results
+    background = models.FloatField(null=True, blank=True, help_text="Background level")
+    fwhm = models.FloatField(null=True, blank=True, help_text="PSF FWHM in pixels")
+    zeropoint = models.FloatField(null=True, blank=True, help_text="Photometric zeropoint")
+    limiting_mag = models.FloatField(null=True, blank=True, help_text="5-sigma limiting magnitude")
+    
+    # Output types (corresponds to different output files)
+    has_catalog = models.BooleanField(default=False)
+    has_weight = models.BooleanField(default=False)
+    has_mask = models.BooleanField(default=False)
+
+    # Catalog information
+    catalog_file_path = models.CharField(max_length=255, null=True, blank=True)
+    catalog_file_size = models.BigIntegerField(null=True, blank=True, help_text="Catalog file size in bytes")
+    source_count = models.IntegerField(null=True, blank=True, help_text="Number of sources in catalog")
+                    
+    # Additional catalog metadata
+    catalog_depth = models.FloatField(null=True, blank=True, help_text="5-sigma detection limit")
+    catalog_seeing = models.FloatField(null=True, blank=True, help_text="PSF FWHM from catalog")
+    catalog_date = models.DateTimeField(null=True, blank=True, help_text="Catalog creation timestamp")
+
+    # Result flags
+    success = models.BooleanField(default=True)
+    
+    class Meta:
+        verbose_name = "Processed Science Image"
+        verbose_name_plural = "Processed Science Images"
+    
+    @property
+    def file_name(self):
+        return os.path.basename(self.file_path)
+
+    def __str__(self):
+        return f"Processed: {self.raw_frame.object_name} ({self.processed_date.strftime('%Y-%m-%d')})"
+
+    def save(self, *args, **kwargs):
+        # Ensure calibration frames are from the same unit as the raw frame
+        if self.master_bias and self.master_bias.unit != self.raw_frame.unit:
+            raise ValueError(f"Master bias must be from the same unit as the raw frame ({self.raw_frame.unit})")
+        if self.master_dark and self.master_dark.unit != self.raw_frame.unit:
+            raise ValueError(f"Master dark must be from the same unit as the raw frame ({self.raw_frame.unit})")
+        if self.master_flat and self.master_flat.unit != self.raw_frame.unit:
+            raise ValueError(f"Master flat must be from the same unit as the raw frame ({self.raw_frame.unit})")
+            
+        # Update file size if file exists
+        if os.path.exists(self.file_path):
+            self.file_size = os.path.getsize(self.file_path)
+            
+        super().save(*args, **kwargs)
+        
+        # Update the processed flag on the raw frame
+        self.raw_frame.processed = True
+        self.raw_frame.save(update_fields=['processed'])
+
+
+
+class StackedImage(models.Model):
+    """Stacked/combined image"""
+    # Source science frames - can be from multiple Units
+    source_frames = models.ManyToManyField(ScienceFrame, related_name='stacked_in')
+    processed_frames = models.ManyToManyField(ProcessedScienceImage, related_name='stacked_in')
+    
+    # Processing information
+    creation_date = models.DateTimeField(auto_now_add=True)
+    processor_version = models.CharField(max_length=50, help_text="Version of processing software")
+    
+    # Target information
+    tile = models.ForeignKey(Tile, on_delete=models.CASCADE)
+    filter = models.ForeignKey(Filter, on_delete=models.CASCADE)
+    
+    # File structure
+    file_path = models.CharField(max_length=255) 
+    file_size = models.BigIntegerField(help_text="File size in bytes", null=True, blank=True)
+    
+    # Stacking parameters
+    method = models.CharField(max_length=50, default='weighted_average')
+    total_exposure = models.FloatField(help_text="Total integration time in seconds") 
+    
+    # Output properties  
+    stack_depth = models.IntegerField(help_text="Number of frames in stack")
+    limiting_mag = models.FloatField(null=True, blank=True)
+    background = models.FloatField(null=True, blank=True, help_text="Background level")
+    seeing = models.FloatField(null=True, blank=True, help_text="Image seeing in arcsec")
+
+    # Catalog information
+    catalog_file_path = models.CharField(max_length=255, null=True, blank=True)
+    catalog_file_size = models.BigIntegerField(null=True, blank=True, help_text="Catalog file size in bytes")
+    source_count = models.IntegerField(null=True, blank=True, help_text="Number of sources in catalog")
+    
+    # Additional catalog metadata
+    catalog_depth = models.FloatField(null=True, blank=True, help_text="5-sigma detection limit")
+    catalog_seeing = models.FloatField(null=True, blank=True, help_text="PSF FWHM from catalog")
+    catalog_date = models.DateTimeField(null=True, blank=True, help_text="Catalog creation timestamp")
+    
+    # Output file types
+    file_type = models.CharField(max_length=20, choices=[
+        ('science', 'Science Frame'),
+        ('weight', 'Weight Frame'),
+        ('diff', 'Difference Frame'),
+        ('coadd', 'Co-addition'),
+        ('coadd_weight', 'Co-addition Weight'),
+    ], default='science')
+    
+    class Meta:
+        verbose_name = "Stacked Image"
+        verbose_name_plural = "Stacked Images"
+        indexes = [
+            models.Index(fields=['tile', 'filter']),
+            models.Index(fields=['filter']),
+            models.Index(fields=['creation_date']),
+        ]
+
+    @property
+    def file_name(self):
+        return os.path.basename(self.file_path)
+
+    def __str__(self):
+        return f"Stack: Tile {self.tile.name}/{self.filter.name} ({self.stack_depth} frames)"
+
+    def get_units_used(self):
+        """Get list of unique telescope units used in this stack"""
+        return Unit.objects.filter(scienceframe__stacked_in=self).distinct()
+
+    # Implement save method to update file size and stack depth
+    def save(self, *args, **kwargs):
+        # Update file size if file exists
+        if os.path.exists(self.file_path):
+            self.file_size = os.path.getsize(self.file_path)
+            
+        # Calculate stack depth if not already set
+        if not self.stack_depth:
+            # Try to determine stack depth from source frames
+            if hasattr(self, 'pk') and self.pk:
+                source_count = self.source_frames.count()
+                if source_count > 0:
+                    self.stack_depth = source_count
+            
+        # If still no stack depth, default to 1
+        if not self.stack_depth:
+            self.stack_depth = 1
+            
+        super().save(*args, **kwargs)
+
+
+# Utility for data file monitoring
+class DataFileMonitor:
+    """Utility class for monitoring data directories and discovering new files"""
+    
+    @classmethod
+    def scan_raw_data_directory(cls, base_path='/lyman/data1/obsdata', unit_filter=None, date_filter=None):
+        """
+        Scan the raw data directory for new files and create database entries
+        
+        Parameters:
+        -----------
+        base_path: str
+            Base path for raw data
+        unit_filter: list
+            Optional list of unit names to filter
+        date_filter: str or datetime.date
+            Optional date to scan (YYYY-MM-DD)
+            
+        Returns:
+        --------
+        dict: Statistics about found/new files
+        """
+        
+        stats = {
+            'bias_found': 0, 'bias_new': 0,
+            'dark_found': 0, 'dark_new': 0,
+            'flat_found': 0, 'flat_new': 0,
+            'light_found': 0, 'light_new': 0,
+        }
+        
+        # Check for folders by date
+        if date_filter:
+            if isinstance(date_filter, str):
+                date_path = date_filter
+            else:
+                date_path = date_filter.strftime('%Y-%m-%d')
+                
+            if os.path.isdir(os.path.join(base_path, date_path)):
+                date_dirs = [os.path.join(base_path, date_path)]
+            else:
+                # Try to find any matches in subdirectories
+                date_dirs = []
+                for root, dirs, _ in os.walk(base_path):
+                    if os.path.basename(root) == date_path:
+                        date_dirs.append(root)
+        else:
+            # Get all date-like directories
+            date_dirs = []
+            # Look for YYYY-MM-DD format directories
+            for item in os.listdir(base_path):
+                item_path = os.path.join(base_path, item)
+                if os.path.isdir(item_path) and re.match(r'^\d{4}-\d{2}-\d{2}$', item):
+                    date_dirs.append(item_path)
+        
+        # Process each date directory
+        for date_dir in date_dirs:
+            # Get all unit directories within this date
+            unit_dirs = []
+            for item in os.listdir(date_dir):
+                item_path = os.path.join(date_dir, item)
+                if os.path.isdir(item_path) and (not unit_filter or item in unit_filter):
+                    if item.startswith('7DT'):
+                        unit_dirs.append(item_path)
+                    
+            if not unit_dirs:
+                # If no unit subdirectories, the date directory might contain files directly
+                # or might have another level of subdirectories (like binning modes)
+                for root, _, files in os.walk(date_dir):
+                    if any(f.endswith('.fits') or f.endswith('.fits.fz') for f in files):
+                        unit_match = re.search(r'(7DT\d+)', root)
+                        if unit_match:
+                            unit_name = unit_match.group(1)
+                            if not unit_filter or unit_name in unit_filter:
+                                DataFileMonitor.process_unit_directory(root, unit_name, stats)
+            else:
+                # Process each unit directory
+                for unit_dir in unit_dirs:
+                    unit_name = os.path.basename(unit_dir)
+                    DataFileMonitor.process_unit_directory(unit_dir, unit_name, stats)
+                    
+        return stats
+    
+    @classmethod
+    def scan_processed_data_directory(cls, base_path='/lyman/data2/processed'):
+        """Scan the processed data directory for new files"""
+        # Implementation similar to scan_raw_data_directory but for processed files
+        pass
+    
+    @staticmethod
+    def process_unit_directory(directory, unit_name, stats):
+        """Process a directory for a specific unit to find FITS files"""
+        
+        # Get unit object
+        try:
+            unit_obj = Unit.objects.get(name=unit_name)
+        except Unit.DoesNotExist:
+            print(f"Warning: Unit {unit_name} not found in database")
+            return
+            
+        # Get camera for this unit
+        try:
+            camera = Camera.objects.get(unit=unit_obj)
+        except Camera.DoesNotExist:
+            print(f"Warning: No camera found for unit {unit_name}")
+            return
+            
+        # Get filter wheel for this unit
+        try:
+            filter_wheel = FilterWheel.objects.get(unit=unit_obj)
+        except FilterWheel.DoesNotExist:
+            print(f"Warning: No filter wheel found for unit {unit_name}")
+            return
+        
+        # Extract binning and gain from directory name
+        dir_name = os.path.basename(directory)
+        binning = "1x1"  # default
+        gain = 2750      # default
+        
+        # Try to extract binning and gain from directory name
+        match = re.search(r'(\d+x\d+)', dir_name)
+        if match:
+            binning = match.group(1)
+            
+        match = re.search(r'gain(\d+)', dir_name)
+        if match:
+            gain = int(match.group(1))
+        
+        # Scan for FITS files
+        for root, _, files in os.walk(directory):
+            for filename in files:
+                if filename.endswith('.fits') or filename.endswith('.fits.fz'):
+                    fits_file = os.path.join(root, filename)
+                    
+                    # Skip if file is already in database
+                    if (BiasFrame.objects.filter(file_path=fits_file).exists() or
+                        DarkFrame.objects.filter(file_path=fits_file).exists() or
+                        FlatFrame.objects.filter(file_path=fits_file).exists() or
+                        ScienceFrame.objects.filter(file_path=fits_file).exists()):
+                        continue
+                    
+                    try:
+                        # Read FITS header
+                        with fits.open(fits_file) as hdul:
+                            header = hdul[0].header
+                            
+                            # Extract common fields
+                            try:
+                                timestamp = datetime.datetime.strptime(
+                                    header.get('DATE-OBS', '2000-01-01T00:00:00'), 
+                                    '%Y-%m-%dT%H:%M:%S'
+                                )
+                                # Ensure timestamp is timezone-aware
+                                timestamp = timezone.make_aware(timestamp, CHILE_TIMEZONE)
+                            except ValueError:
+                                # Fall back to file modification time
+                                timestamp = datetime.datetime.fromtimestamp(
+                                    os.path.getmtime(fits_file)
+                                )
+                                timestamp = timezone.make_aware(timestamp)
+                                
+                            # Extract CCD temperature
+                            try:
+                                temperature = float(header.get('CCD-TEMP', -20.0))
+                            except (ValueError, TypeError):
+                                temperature = -20.0  # default value
+                                
+                            # Determine frame type
+                            frame_type = header.get('IMAGETYP', '').upper()
+                            exposure_time = float(header.get('EXPTIME', 0.0))
+                            
+                            # Create observation date in Chile timezone
+                            chile_datetime = timestamp.astimezone(CHILE_TIMEZONE)
+                            # If before noon, it belongs to previous night
+                            if chile_datetime.hour < 12:
+                                night_date = chile_datetime.date() - datetime.timedelta(days=1)
+                            else:
+                                night_date = chile_datetime.date()
+                                
+                            # Get or create night
+                            night = Night.get_or_create_for_date(night_date)
+                            
+                            if frame_type == 'BIAS' or 'BIAS' in filename.upper():
+                                stats['bias_found'] += 1
+                                BiasFrame.objects.create(
+                                    unit=unit_obj,
+                                    camera=camera,
+                                    night=night,
+                                    timestamp=timestamp,
+                                    observation_date=timestamp.date(),
+                                    gain=gain,
+                                    binning=binning,
+                                    temperature=temperature,
+                                    file_path=fits_file,
+                                )
+                                stats['bias_new'] += 1
+                                
+                            elif frame_type == 'DARK' or 'DARK' in filename.upper():
+                                stats['dark_found'] += 1
+                                DarkFrame.objects.create(
+                                    unit=unit_obj,
+                                    camera=camera,
+                                    night=night,
+                                    timestamp=timestamp,
+                                    observation_date=timestamp.date(),
+                                    gain=gain,
+                                    binning=binning,
+                                    temperature=temperature,
+                                    file_path=fits_file,
+                                    exptime=exposure_time,
+                                )
+                                stats['dark_new'] += 1
+                                
+                            elif frame_type == 'FLAT' or 'FLAT' in filename.upper():
+                                stats['flat_found'] += 1
+                                
+                                # Try to determine filter
+                                filter_name = header.get('FILTER', '')
+                                try:
+                                    filter_obj = Filter.objects.get(name=filter_name)
+                                except Filter.DoesNotExist:
+                                    # Skip if filter not found
+                                    print(f"Warning: Filter '{filter_name}' not found for flat: {filename}")
+                                    continue
+                                    
+                                FlatFrame.objects.create(
+                                    unit=unit_obj,
+                                    camera=camera,
+                                    night=night,
+                                    timestamp=timestamp,
+                                    observation_date=timestamp.date(),
+                                    gain=gain,
+                                    binning=binning,
+                                    temperature=temperature,
+                                    file_path=fits_file,
+                                    exptime=exposure_time,
+                                    filter=filter_obj,
+                                    filter_wheel=filter_wheel,
+                                    sky_level=float(header.get('SKYLEVEL', 0.0)),
+                                    twilight=('TWILIGHT' in filename.upper() or 'MORNING' in filename.upper() or 'EVENING' in filename.upper()),
+                                    sun_altitude=float(header.get('SUNALT', -18.0)),
+                                )
+                                stats['flat_new'] += 1
+                                
+                            else:
+                                # Assume science frame
+                                stats['light_found'] += 1
+                                
+                                # Extract coordinates
+                                ra = header.get('OBJCTRA', 0.0)
+                                dec = header.get('OBJCTDEC', 0.0)
+                                
+                                # Convert from HH:MM:SS.S to degrees if needed
+                                if isinstance(ra, str) and (':' in ra or ' ' in ra):
+                                    ra = parse_ra(ra)
+                                
+                                if isinstance(dec, str) and (':' in dec or ' ' in dec):
+                                    dec = parse_dec(dec)
+                                
+                                if not isinstance(ra, (int, float)):
+                                    ra = 0.0
+                                if not isinstance(dec, (int, float)):
+                                    dec = 0.0
+                                
+                                # Try to determine filter
+                                filter_name = header.get('FILTER', '')
+                                try:
+                                    filter_obj = Filter.objects.get(name=filter_name)
+                                except Filter.DoesNotExist:
+                                    # Skip if filter not found
+                                    print(f"Warning: Filter '{filter_name}' not found for science frame: {filename}")
+                                    continue
+                                
+                                # Try to find containing tile
+                                tile = None
+                                try:
+                                    # Use point-in-polygon test
+                                    for t in Tile.objects.all():
+                                        if t.contains_point(ra, dec):
+                                            tile = t
+                                            break
+                                except:
+                                    pass
+                                
+                                ScienceFrame.objects.create(
+                                    unit=unit_obj,
+                                    camera=camera,
+                                    night=night,
+                                    timestamp=timestamp,
+                                    observation_date=timestamp.date(),
+                                    gain=gain,
+                                    binning=binning,
+                                    temperature=temperature,
+                                    file_path=fits_file,
+                                    object_name=header.get('OBJECT', 'Unknown'),
+                                    ra=ra,
+                                    dec=dec,
+                                    filter=filter_obj,
+                                    filter_wheel=filter_wheel,
+                                    exptime=exposure_time,
+                                    airmass=float(header.get('AIRMASS', 1.0)),
+                                    seeing=float(header.get('SEEING', 2.0)),
+                                    tile=tile,
+                                )
+                                stats['light_new'] += 1
+                                
+                    except Exception as e:
+                        print(f"Error processing {fits_file}: {e}")
+                        print(traceback.format_exc())
+
+
+def parse_ra(ra_str):
+    """Parse RA from string like '12:34:56.7' or '12 34 56.7' to degrees"""
+    ra_str = ra_str.replace(':', ' ').strip()
+    parts = ra_str.split()
+    if len(parts) >= 3:
+        try:
+            h = float(parts[0])
+            m = float(parts[1])
+            s = float(parts[2])
+            return 15.0 * (h + m/60.0 + s/3600.0)
+        except (ValueError, TypeError):
+            return 0.0
+    return 0.0
+
+
+def parse_dec(dec_str):
+    """Parse Dec from string like '-12:34:56.7' or '-12 34 56.7' to degrees"""
+    dec_str = dec_str.replace(':', ' ').strip()
+    sign = -1 if dec_str.startswith('-') else 1
+    dec_str = dec_str.lstrip('+-')
+    parts = dec_str.split()
+    if len(parts) >= 3:
+        try:
+            d = float(parts[0])
+            m = float(parts[1])
+            s = float(parts[2])
+            return sign * (d + m/60.0 + s/3600.0)
+        except (ValueError, TypeError):
+            return 0.0
+    return 0.0
+
+
+# Custom managers with enhanced search capabilities
+class BiasFrameManager(models.Manager):
+    def for_unit(self, unit_name):
+        return self.filter(unit__name=unit_name)
+    
+    def for_date(self, date):
+        return self.filter(observation_date=date)
+    
+    def for_night(self, night):
+        if isinstance(night, datetime.date):
+            return self.filter(night__date=night)
+        return self.filter(night=night)
+    
+    def with_gain(self, gain):
+        return self.filter(gain=gain)
+        
+    def with_binning(self, binning):
+        return self.filter(binning=binning)
+
+
+class DarkFrameManager(models.Manager):
+    def for_unit(self, unit_name):
+        return self.filter(unit__name=unit_name)
+    
+    def for_date(self, date):
+        return self.filter(observation_date=date)
+    
+    def for_night(self, night):
+        if isinstance(night, datetime.date):
+            return self.filter(night__date=night)
+        return self.filter(night=night)
+    
+    def with_exptime(self, exptime, tolerance=0.1):
+        """Find dark frames with specified exposure time within tolerance"""
+        return self.filter(exptime__range=(exptime - tolerance, exptime + tolerance))
+
+
+class FlatFrameManager(models.Manager):
+    def for_unit(self, unit_name):
+        return self.filter(unit__name=unit_name)
+    
+    def for_date(self, date):
+        return self.filter(observation_date=date)
+    
+    def for_night(self, night):
+        if isinstance(night, datetime.date):
+            return self.filter(night__date=night)
+        return self.filter(night=night)
+    
+    def with_filter(self, filter_name):
+        return self.filter(filter__name=filter_name)
+
+
+class ScienceFrameManager(models.Manager):
+    def for_unit(self, unit_name):
+        return self.filter(unit__name=unit_name)
+    
+    def for_date(self, date):
+        return self.filter(observation_date=date)
+    
+    def for_night(self, night):
+        if isinstance(night, datetime.date):
+            return self.filter(night__date=night)
+        return self.filter(night=night)
+    
+    def for_object(self, object_name):
+        return self.filter(object_name__icontains=object_name)
+    
+    def for_coordinates(self, ra, dec, radius_deg=0.5):
+        """Find frames with pointing within radius of specified coordinates"""
+        # Calculate ra range accounting for cos(dec) factor
+        ra_radius = radius_deg / np.cos(np.radians(max(0.1, abs(dec))))  # Avoid division by zero
+        
+        return self.filter(
+            ra__gte=ra - ra_radius,
+            ra__lte=ra + ra_radius,
+            dec__gte=dec - radius_deg,
+            dec__lte=dec + radius_deg
+        )
+    
+    def with_filter(self, filter_name):
+        return self.filter(filter__name=filter_name)
+    
+    def unprocessed(self):
+        """Find science frames that have not been processed yet"""
+        return self.filter(processed=False)
+    
+    def in_tile(self, tile_name):
+        """Find frames in specific tile"""
+        if isinstance(tile_name, int):
+            return self.filter(tile__id=tile_name)
+        return self.filter(tile__name=tile_name)
+    
+    def with_good_quality(self):
+        """Find frames with good quality flag"""
+        return self.filter(quality_flag="good")
+
+
+# Assign managers to model classes
+BiasFrame.objects = BiasFrameManager()
+DarkFrame.objects = DarkFrameManager()
+FlatFrame.objects = FlatFrameManager()
+ScienceFrame.objects = ScienceFrameManager()
+
+
+# Manager for processed data
+class ProcessedScienceImageManager(models.Manager):
+    def for_tile(self, tile_name):
+        """Find processed images for a specific tile"""
+        return self.filter(raw_frame__tile__name=tile_name)
+    
+    def for_filter(self, filter_name):
+        """Find processed images using a specific filter"""
+        return self.filter(raw_frame__filter__name=filter_name)
+    
+    def for_night(self, night):
+        """Find processed images from a specific night"""
+        if isinstance(night, datetime.date):
+            return self.filter(raw_frame__night__date=night) 
+        return self.filter(raw_frame__night=night)
+    
+    def for_unit(self, unit_name):
+        """Find processed images from a specific unit"""
+        return self.filter(raw_frame__unit__name=unit_name)
+
+
+# Manager for stacked images
+class StackedImageManager(models.Manager):
+    def for_tile(self, tile_name):
+        """Find stacked images for a specific tile"""
+        return self.filter(tile__name=tile_name)
+    
+    def for_filter(self, filter_name):
+        """Find stacked images using a specific filter"""
+        return self.filter(filter__name=filter_name)
+    
+    def science_only(self):
+        """Find only science-type stacked images"""
+        return self.filter(file_type='science')
+
+
+# Assign managers to processed data models
+ProcessedScienceImage.objects = ProcessedScienceImageManager()
+StackedImage.objects = StackedImageManager()

@@ -1,0 +1,879 @@
+"""
+Django management command for sequential RAW data ingest of all nights.
+Processes all available nights from oldest to newest with comprehensive reporting.
+"""
+
+import os
+import sys
+import time
+import re
+import glob
+from datetime import date, datetime, timedelta
+from django.core.management.base import BaseCommand, CommandError
+from django.db import transaction
+from django.utils import timezone
+
+# Import from the parent survey app
+from survey.models import (
+    Night, FrameManager, ScienceFrame, BiasFrame, DarkFrame, FlatFrame,
+    Target, Tile, FilenamePatternAnalyzer, Unit, Filter
+)
+
+class Command(BaseCommand):
+    help = 'Sequential RAW data ingest for all nights from oldest to newest'
+    
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--start-date',
+            type=str,
+            default='2025-06-30',  # Default to process only new data after 2025-06-29
+            help='Start date (YYYY-MM-DD). Default: 2025-06-30 (processes only new data after bulk import)'
+        )
+        
+        parser.add_argument(
+            '--end-date',
+            type=str,
+            help='End date (YYYY-MM-DD). If not provided, processes until the latest available data'
+        )
+        
+        parser.add_argument(
+            '--cleanup',
+            action='store_true',
+            help='Clean up existing data before importing each night'
+        )
+        
+        parser.add_argument(
+            '--auto-confirm',
+            action='store_true',
+            help='Auto-confirm all cleanup operations without user interaction'
+        )
+        
+        parser.add_argument(
+            '--parallel',
+            action='store_true',
+            help='Force parallel processing for all nights'
+        )
+        
+        parser.add_argument(
+            '--workers',
+            type=int,
+            default=4,
+            help='Number of parallel workers (default: 4)'
+        )
+        
+        parser.add_argument(
+            '--limit-per-night',
+            type=int,
+            help='Limit number of files to process per night (for testing)'
+        )
+        
+        parser.add_argument(
+            '--dry-run',
+            action='store_true',
+            help='Discover nights but do not process them'
+        )
+        
+        parser.add_argument(
+            '--debug',
+            action='store_true',
+            help='Enable debug mode with detailed logging'
+        )
+        
+        parser.add_argument(
+            '--validate',
+            action='store_true',
+            help='Run validation checks after each night import'
+        )
+        
+        parser.add_argument(
+            '--continue-on-error',
+            action='store_true',
+            help='Continue processing other nights if one night fails'
+        )
+        
+        parser.add_argument(
+            '--create-targets',
+            action='store_true',
+            default=True,
+            help='Enable automatic Target creation (default: True)'
+        )
+        
+        parser.add_argument(
+            '--exclude-focus',
+            action='store_true',
+            default=True,
+            help='Exclude focus-related files (default: True)'
+        )
+        
+        parser.add_argument(
+            '--exclude-test',
+            action='store_true',
+            default=True,
+            help='Exclude test/calibration files (default: True)'
+        )
+        
+        parser.add_argument(
+            '--skip-existing',
+            action='store_true',
+            help='Skip nights that already have data in the database'
+        )
+        
+        parser.add_argument(
+            '--report-interval',
+            type=int,
+            default=5,
+            help='Progress reporting interval in nights (default: 5)'
+        )
+        
+        parser.add_argument(
+            '--new-data-only',
+            action='store_true',
+            help='Process only new data after 2025-06-29 (sets start-date to 2025-06-30)'
+        )
+        
+        parser.add_argument(
+            '--bulk-cutoff-date',
+            type=str,
+            default='2025-06-29',
+            help='Cutoff date for bulk processed data (default: 2025-06-29)'
+        )
+
+    def handle(self, *args, **options):
+        """Main command handler."""
+        self.start_time = time.time()
+        self.options = options
+        
+        # Handle new-data-only option
+        if options['new_data_only']:
+            bulk_cutoff = options['bulk_cutoff_date']
+            try:
+                cutoff_date = date.fromisoformat(bulk_cutoff)
+                next_day = cutoff_date + timedelta(days=1)
+                options['start_date'] = str(next_day)
+                self.stdout.write(f"🆕 New data mode: Processing from {next_day} (after bulk cutoff {bulk_cutoff})")
+            except ValueError:
+                raise CommandError(f"Invalid bulk cutoff date: {bulk_cutoff}")
+        
+        # Setup logging
+        self.setup_logging()
+        
+        # Print banner
+        self.print_banner()
+        
+        try:
+            # Phase 1: Discover all available nights
+            available_nights = self.discover_all_nights()
+            
+            if not available_nights:
+                self.stdout.write(
+                    self.style.ERROR('❌ No nights found in the data directory!')
+                )
+                return
+            
+            # Phase 2: Filter nights based on date range
+            filtered_nights = self.filter_nights_by_date_range(available_nights)
+            
+            if not filtered_nights:
+                self.stdout.write(
+                    self.style.ERROR('❌ No nights found in the specified date range!')
+                )
+                return
+            
+            # Phase 3: Check existing data and filter if requested
+            if options['skip_existing']:
+                filtered_nights = self.filter_existing_nights(filtered_nights)
+            
+            # Phase 4: Show processing plan and get confirmation
+            if not self.confirm_processing_plan(filtered_nights):
+                self.stdout.write(
+                    self.style.WARNING('🛑 Processing cancelled by user')
+                )
+                return
+            
+            # Phase 5: Sequential processing
+            if not options['dry_run']:
+                self.process_all_nights(filtered_nights)
+            else:
+                self.stdout.write(
+                    self.style.SUCCESS('✅ Dry run completed - no data was processed')
+                )
+                
+        except KeyboardInterrupt:
+            self.stdout.write(
+                self.style.ERROR('\n🛑 Processing interrupted by user')
+            )
+            sys.exit(1)
+        except Exception as e:
+            self.stdout.write(
+                self.style.ERROR(f'❌ Fatal error: {e}')
+            )
+            if options['debug']:
+                import traceback
+                traceback.print_exc()
+            sys.exit(1)
+        
+        # Final summary
+        self.print_final_summary()
+
+    def setup_logging(self):
+        """Setup logging configuration."""
+        self.total_nights_processed = 0
+        self.total_nights_failed = 0
+        self.total_files_processed = 0
+        self.total_frames_imported = 0
+        self.processing_log = []
+        
+    def print_banner(self):
+        """Print command banner."""
+        self.stdout.write("=" * 100)
+        self.stdout.write(self.style.SUCCESS("🌙 SEQUENTIAL NIGHT DATA INGEST COMMAND"))
+        self.stdout.write("=" * 100)
+        
+        # Print configuration
+        opts = self.options
+        self.stdout.write(f"📅 Date range: {opts.get('start_date', 'earliest')} → {opts.get('end_date', 'latest')}")
+        
+        # Special mode indicators
+        if opts.get('new_data_only'):
+            self.stdout.write("🆕 NEW DATA MODE: Processing only post-bulk data")
+            self.stdout.write(f"📊 Bulk cutoff: {opts.get('bulk_cutoff_date', '2025-06-29')}")
+        
+        if opts['cleanup']:
+            self.stdout.write("🧹 Cleanup mode: ENABLED")
+        if opts['skip_existing']:
+            self.stdout.write("⏭️  Skip existing: ENABLED")
+        if opts['parallel']:
+            self.stdout.write(f"⚡ Parallel mode: {opts['workers']} workers")
+        if opts['limit_per_night']:
+            self.stdout.write(f"🔢 Limit per night: {opts['limit_per_night']} files")
+        if opts['dry_run']:
+            self.stdout.write("🔍 Dry run mode: ENABLED")
+        if opts['debug']:
+            self.stdout.write("🔍 Debug mode: ENABLED")
+        
+        self.stdout.write("=" * 100)
+
+    def discover_all_nights(self):
+        """Discover all available nights in the data directory."""
+        self.stdout.write("🔍 PHASE 1: DISCOVERING AVAILABLE NIGHTS")
+        self.stdout.write("-" * 50)
+        
+        base_path = "/lyman/data1/obsdata"
+        available_nights = set()
+        
+        if not os.path.exists(base_path):
+            raise CommandError(f"Base data path does not exist: {base_path}")
+        
+        # Get cutoff date for optimization
+        cutoff_date = None
+        if self.options.get('new_data_only'):
+            try:
+                cutoff_date = date.fromisoformat(self.options.get('bulk_cutoff_date', '2025-06-29'))
+                self.stdout.write(f"🎯 Optimization: Only scanning for dates after {cutoff_date}")
+            except ValueError:
+                pass
+        
+        # Scan each telescope unit directory
+        unit_dirs = []
+        for item in os.listdir(base_path):
+            if item.startswith('7DT') and os.path.isdir(os.path.join(base_path, item)):
+                unit_dirs.append(item)
+        
+        unit_dirs.sort()
+        self.stdout.write(f"🔭 Found telescope units: {unit_dirs}")
+        
+        for unit_dir in unit_dirs:
+            unit_path = os.path.join(base_path, unit_dir)
+            unit_nights = set()
+            
+            try:
+                for subdir in os.listdir(unit_path):
+                    # Look for date patterns: YYYY-MM-DD or YYYY-MM-DD_*
+                    if self.is_valid_night_directory(subdir):
+                        night_date = self.extract_date_from_dirname(subdir)
+                        if night_date:
+                            # Skip dates before cutoff for efficiency
+                            if cutoff_date and night_date <= cutoff_date:
+                                continue
+                            unit_nights.add(night_date)
+                            available_nights.add(night_date)
+            
+            except PermissionError:
+                self.stdout.write(
+                    self.style.WARNING(f"⚠️ Permission denied accessing {unit_path}")
+                )
+                continue
+            except Exception as e:
+                self.stdout.write(
+                    self.style.WARNING(f"⚠️ Error scanning {unit_path}: {e}")
+                )
+                continue
+            
+            if unit_nights:
+                self.stdout.write(f"  📊 {unit_dir}: {len(unit_nights)} nights")
+                if self.options['debug']:
+                    sorted_nights = sorted(unit_nights)
+                    self.stdout.write(f"       Range: {sorted_nights[0]} → {sorted_nights[-1]}")
+            elif cutoff_date:
+                self.stdout.write(f"  📊 {unit_dir}: 0 nights (after {cutoff_date})")
+        
+        # Convert to sorted list
+        available_nights = sorted(list(available_nights))
+        
+        self.stdout.write(f"\n📈 Total nights discovered: {len(available_nights)}")
+        if available_nights:
+            self.stdout.write(f"📅 Date range: {available_nights[0]} → {available_nights[-1]}")
+        elif cutoff_date:
+            self.stdout.write(f"📅 No new nights found after {cutoff_date}")
+        
+        return available_nights
+
+    def is_valid_night_directory(self, dirname):
+        """Check if directory name represents a valid night."""
+        # Match YYYY-MM-DD or YYYY-MM-DD_*
+        pattern = r'^\d{4}-\d{2}-\d{2}(_.*)?$'
+        return bool(re.match(pattern, dirname))
+
+    def extract_date_from_dirname(self, dirname):
+        """Extract date from directory name."""
+        try:
+            # Take the first 10 characters (YYYY-MM-DD)
+            date_str = dirname[:10]
+            return date.fromisoformat(date_str)
+        except ValueError:
+            return None
+
+    def filter_nights_by_date_range(self, available_nights):
+        """Filter nights by specified date range."""
+        self.stdout.write("\n🗓️  PHASE 2: FILTERING BY DATE RANGE")
+        self.stdout.write("-" * 50)
+        
+        start_date = None
+        end_date = None
+        
+        if self.options['start_date']:
+            try:
+                start_date = date.fromisoformat(self.options['start_date'])
+            except ValueError:
+                raise CommandError(f"Invalid start date: {self.options['start_date']}")
+        
+        if self.options['end_date']:
+            try:
+                end_date = date.fromisoformat(self.options['end_date'])
+            except ValueError:
+                raise CommandError(f"Invalid end date: {self.options['end_date']}")
+        
+        # Filter nights
+        filtered_nights = []
+        for night_date in available_nights:
+            include = True
+            
+            if start_date and night_date < start_date:
+                include = False
+            
+            if end_date and night_date > end_date:
+                include = False
+            
+            if include:
+                filtered_nights.append(night_date)
+        
+        self.stdout.write(f"📅 Start date: {start_date or 'earliest available'}")
+        self.stdout.write(f"📅 End date: {end_date or 'latest available'}")
+        self.stdout.write(f"📊 Nights after filtering: {len(filtered_nights)}")
+        
+        if filtered_nights:
+            self.stdout.write(f"📅 Actual range: {filtered_nights[0]} → {filtered_nights[-1]}")
+        
+        return filtered_nights
+
+    def filter_existing_nights(self, nights):
+        """Filter out nights that already have data in the database."""
+        self.stdout.write("\n⏭️  PHASE 3: CHECKING EXISTING DATA")
+        self.stdout.write("-" * 50)
+        
+        nights_to_process = []
+        existing_count = 0
+        
+        for night_date in nights:
+            try:
+                night_obj = Night.objects.get(date=night_date)
+                # Check if night has any frames
+                total_frames = (
+                    night_obj.science_count + 
+                    night_obj.bias_count + 
+                    night_obj.dark_count + 
+                    night_obj.flat_count
+                )
+                
+                if total_frames > 0:
+                    existing_count += 1
+                    if self.options['debug']:
+                        self.stdout.write(f"  ⏭️  Skipping {night_date}: {total_frames} frames exist")
+                else:
+                    nights_to_process.append(night_date)
+                    
+            except Night.DoesNotExist:
+                nights_to_process.append(night_date)
+        
+        self.stdout.write(f"📊 Nights with existing data: {existing_count}")
+        self.stdout.write(f"📊 Nights to process: {len(nights_to_process)}")
+        
+        return nights_to_process
+
+    def confirm_processing_plan(self, nights):
+        """Show processing plan and get user confirmation."""
+        self.stdout.write("\n📋 PHASE 4: PROCESSING PLAN")
+        self.stdout.write("-" * 50)
+        
+        if not nights:
+            self.stdout.write("❌ No nights to process!")
+            return False
+        
+        self.stdout.write(f"📊 Total nights to process: {len(nights)}")
+        self.stdout.write(f"📅 Date range: {nights[0]} → {nights[-1]}")
+        
+        # Estimate processing time
+        estimated_time = len(nights) * 5  # Rough estimate: 5 minutes per night
+        self.stdout.write(f"⏱️  Estimated processing time: {estimated_time} minutes")
+        
+        # Show configuration summary
+        self.stdout.write("\n🔧 Configuration:")
+        opts = self.options
+        self.stdout.write(f"  • Cleanup: {'Yes' if opts['cleanup'] else 'No'}")
+        self.stdout.write(f"  • Parallel: {'Yes' if opts['parallel'] else 'Auto'}")
+        self.stdout.write(f"  • Workers: {opts['workers']}")
+        self.stdout.write(f"  • Create targets: {'Yes' if opts['create_targets'] else 'No'}")
+        self.stdout.write(f"  • Exclude focus: {'Yes' if opts['exclude_focus'] else 'No'}")
+        self.stdout.write(f"  • Exclude test: {'Yes' if opts['exclude_test'] else 'No'}")
+        self.stdout.write(f"  • Continue on error: {'Yes' if opts['continue_on_error'] else 'No'}")
+        
+        # Show first few and last few nights
+        if len(nights) > 10:
+            self.stdout.write(f"\n📅 First few nights: {', '.join(str(d) for d in nights[:5])}")
+            self.stdout.write(f"📅 Last few nights: {', '.join(str(d) for d in nights[-5:])}")
+        else:
+            self.stdout.write(f"\n📅 Nights: {', '.join(str(d) for d in nights)}")
+        
+        # Get confirmation unless auto-confirm is enabled
+        if not self.options['auto_confirm'] and not self.options['dry_run']:
+            self.stdout.write("\n⚠️  This will process a large amount of data!")
+            response = input("Do you want to proceed? (type 'YES' to confirm): ")
+            if response != 'YES':
+                return False
+        
+        return True
+
+    def process_all_nights(self, nights):
+        """Process all nights sequentially."""
+        self.stdout.write("\n⚡ PHASE 5: SEQUENTIAL PROCESSING")
+        self.stdout.write("-" * 50)
+        
+        total_nights = len(nights)
+        
+        for i, night_date in enumerate(nights, 1):
+            night_start = time.time()
+            
+            # Progress header
+            self.stdout.write(f"\n🌙 PROCESSING NIGHT {i}/{total_nights}: {night_date}")
+            self.stdout.write("─" * 60)
+            
+            try:
+                # Process single night using integrated function
+                result = self.process_single_night(night_date)
+                
+                night_time = time.time() - night_start
+                self.total_nights_processed += 1
+                
+                # Update totals
+                if result:
+                    self.total_files_processed += result.get('total', 0)
+                    self.total_frames_imported += result.get('imported', 0)
+                
+                # Log result
+                self.processing_log.append({
+                    'date': night_date,
+                    'status': 'success',
+                    'time': night_time,
+                    'result': result
+                })
+                
+                self.stdout.write(
+                    self.style.SUCCESS(f"✅ Night {night_date} completed in {night_time:.2f}s")
+                )
+                
+            except Exception as e:
+                night_time = time.time() - night_start
+                self.total_nights_failed += 1
+                
+                # Log error
+                self.processing_log.append({
+                    'date': night_date,
+                    'status': 'failed',
+                    'time': night_time,
+                    'error': str(e)
+                })
+                
+                self.stdout.write(
+                    self.style.ERROR(f"❌ Night {night_date} failed: {e}")
+                )
+                
+                if self.options['debug']:
+                    import traceback
+                    traceback.print_exc()
+                
+                if not self.options['continue_on_error']:
+                    raise CommandError(f"Processing stopped due to error in {night_date}")
+            
+            # Progress reporting
+            if i % self.options['report_interval'] == 0 or i == total_nights:
+                self.print_progress_report(i, total_nights)
+
+    def process_single_night(self, night_date):
+        """Process a single night using enhanced ingest logic."""
+        date_str = str(night_date)
+        quiet_mode = True  # Suppress output for batch processing
+        
+        def log_print(message, force=False):
+            """Print message only if not in quiet mode or forced."""
+            if not quiet_mode or force or self.options['debug']:
+                self.stdout.write(message)
+        
+        start_total = time.time()
+        
+        # Step 1: Cleanup existing data if requested
+        if self.options['cleanup']:
+            cleanup_success = self.cleanup_existing_data(date_str, confirm=self.options['auto_confirm'])
+            if not cleanup_success:
+                return None
+        
+        # Step 2: Initialize night object
+        target_date = date.fromisoformat(date_str)
+        night = Night.get_or_create_for_date(target_date)
+        if self.options['debug']:
+            log_print(f"✅ Night object ready: {night}")
+        
+        # Step 3: Discover and filter FITS files
+        all_files = self.discover_fits_files(date_str)
+        
+        if not all_files:
+            log_print("❌ No FITS files found!", force=True)
+            return {'total': 0, 'imported': 0, 'existing': 0, 'failed': 0}
+        
+        log_print(f"📊 Total files discovered: {len(all_files):,}")
+        
+        # Filter unwanted files if requested
+        if self.options['exclude_focus'] or self.options['exclude_test']:
+            filtered_files, exclusion_stats = self.filter_unwanted_files(
+                all_files, self.options['exclude_focus'], self.options['exclude_test']
+            )
+            log_print(f"🔽 Files after filtering: {len(filtered_files):,}")
+        else:
+            filtered_files = all_files
+        
+        # Apply file limit for testing
+        if self.options['limit_per_night'] and self.options['limit_per_night'] < len(filtered_files):
+            filtered_files = filtered_files[:self.options['limit_per_night']]
+            log_print(f"🔢 Limited to first {len(filtered_files):,} files for processing")
+        
+        # Auto-determine processing mode
+        parallel = self.options['parallel']
+        if len(filtered_files) >= 100000 and not parallel:
+            log_print(f"📈 Large dataset detected ({len(filtered_files):,} files)")
+            log_print("🚀 Auto-enabling parallel processing mode")
+            parallel = True
+        
+        # Step 4: Target pre-processing (if enabled)
+        if self.options['create_targets']:
+            target_stats = self.pre_process_targets(filtered_files)
+            if self.options['debug']:
+                log_print(f"✅ Target processing: {target_stats['created']} new, {target_stats['existing']} existing")
+        
+        # Step 5: Enhanced Import using FrameManager
+        start_import = time.time()
+        
+        # Progress tracking for quiet mode
+        last_progress_time = start_import
+        
+        def progress_callback(processed, total, stats):
+            nonlocal last_progress_time
+            current_time = time.time()
+            
+            # In quiet mode, only report every 30 seconds or at completion
+            if quiet_mode and (current_time - last_progress_time < 30) and processed < total:
+                return
+            
+            last_progress_time = current_time
+            elapsed = current_time - start_import
+            rate = processed / elapsed if elapsed > 0 else 0
+            eta = (total - processed) / rate if rate > 0 else 0
+            
+            log_print(f"📈 Progress: {processed:,}/{total:,} ({processed/total*100:.1f}%) | "
+                     f"Rate: {rate:.1f} files/s | ETA: {eta:.0f}s")
+        
+        # Perform the import
+        try:
+            results = FrameManager.import_files(
+                filtered_files, 
+                night, 
+                parallel=parallel,
+                max_workers=self.options['workers'],
+                progress_callback=progress_callback if self.options['debug'] else None
+            )
+            
+            import_time = time.time() - start_import
+            
+        except Exception as e:
+            log_print(f"❌ Import failed with error: {e}", force=True)
+            raise
+        
+        # Step 6: Target post-processing (if enabled)
+        if self.options['create_targets'] and results['imported'] > 0:
+            post_target_stats = self.post_process_targets(night)
+            if self.options['debug']:
+                log_print(f"✅ Post-processing: {post_target_stats['linked_targets']} targets linked")
+        
+        # Step 7: Update night statistics
+        try:
+            night.update_statistics()
+            if self.options['debug']:
+                log_print(f"✅ Night stats: {night.science_count:,} science, {night.total_frames:,} total")
+        except Exception as e:
+            log_print(f"⚠️ Could not update night statistics: {e}")
+        
+        # Step 8: Validation (if requested)
+        if self.options['validate'] and results['imported'] > 0:
+            try:
+                validation_results = FrameManager.validate_imported_frames(night, sample_size=20)
+                if self.options['debug']:
+                    log_print(f"🔍 Validation: {'PASSED' if validation_results['validation_passed'] else 'ISSUES'}")
+            except Exception as e:
+                log_print(f"❌ Validation failed: {e}")
+        
+        # Final summary
+        total_time = time.time() - start_total
+        
+        if self.options['debug']:
+            log_print(f"🎉 Processing completed in {total_time:.2f}s")
+            log_print(f"✨ Imported: {results['imported']:,}, Existing: {results['existing']:,}, Failed: {results['failed']:,}")
+        
+        return results
+
+    def discover_fits_files(self, date_str):
+        """Discover FITS files for the given date."""
+        file_paths = []
+        base_path = "/lyman/data1/obsdata"
+        
+        # Get all telescope units
+        try:
+            units = [d for d in os.listdir(base_path) if d.startswith('7DT') and os.path.isdir(os.path.join(base_path, d))]
+            units.sort()
+        except (FileNotFoundError, PermissionError):
+            return []
+        
+        for unit in units:
+            unit_path = os.path.join(base_path, unit)
+            
+            # Look for directories matching the date
+            for dir_name in os.listdir(unit_path):
+                if dir_name.startswith(date_str):
+                    date_dir = os.path.join(unit_path, dir_name)
+                    if os.path.isdir(date_dir):
+                        # Find all FITS files in this directory
+                        fits_pattern = os.path.join(date_dir, "*.fits")
+                        fits_files = glob.glob(fits_pattern)
+                        file_paths.extend(fits_files)
+        
+        return sorted(file_paths)
+
+    def filter_unwanted_files(self, file_paths, exclude_focus=True, exclude_test=True):
+        """Filter out unwanted files using FilenamePatternAnalyzer."""
+        filtered_files = []
+        exclusion_stats = {'focus': 0, 'test': 0, 'other': 0}
+        
+        for file_path in file_paths:
+            filename = os.path.basename(file_path)
+            
+            # Basic exclusion patterns
+            exclude = False
+            
+            if exclude_focus:
+                if any(keyword in filename.lower() for keyword in ['focus', 'focusing', 'af_']):
+                    exclusion_stats['focus'] += 1
+                    exclude = True
+            
+            if exclude_test and not exclude:
+                if any(keyword in filename.lower() for keyword in ['test', 'calib', 'lamp', 'twilight']):
+                    exclusion_stats['test'] += 1
+                    exclude = True
+            
+            if not exclude:
+                filtered_files.append(file_path)
+        
+        return filtered_files, exclusion_stats
+
+    def pre_process_targets(self, file_paths):
+        """Pre-process files to identify and create Target objects."""
+        target_names = set()
+        stats = {'created': 0, 'existing': 0}
+        
+        # Extract target names from filenames
+        for file_path in file_paths[:1000]:  # Sample first 1000 files
+            try:
+                analyzer = FilenamePatternAnalyzer(file_path)
+                if analyzer.parsed_filename and analyzer.parsed_filename.get('objname'):
+                    objname = analyzer.parsed_filename.get('objname')
+                    if objname and not objname.startswith('BIAS') and not objname.startswith('DARK') and not objname.startswith('FLAT'):
+                        target_names.add(objname)
+            except:
+                continue
+        
+        # Create Target objects for new names
+        for target_name in target_names:
+            try:
+                target, created = Target.objects.get_or_create(
+                    name=target_name,
+                    defaults={
+                        'ra': 0.0,  # Will be updated later
+                        'dec': 0.0,
+                        'target_type': 'EXSCI',
+                        'observation_strategy': 'centered'
+                    }
+                )
+                if created:
+                    stats['created'] += 1
+                else:
+                    stats['existing'] += 1
+            except Exception:
+                continue
+        
+        return stats
+
+    def post_process_targets(self, night):
+        """Post-process science frames to link them with appropriate targets."""
+        stats = {'linked_targets': 0}
+        
+        # Update target coordinates from science frames
+        science_frames = ScienceFrame.objects.filter(night=night, target__isnull=True)
+        
+        for frame in science_frames[:100]:  # Process sample
+            if frame.object_name:
+                try:
+                    target = Target.objects.get(name=frame.object_name)
+                    if frame.object_ra and frame.object_dec:
+                        target.ra = frame.object_ra
+                        target.dec = frame.object_dec
+                        target.save()
+                        frame.target = target
+                        frame.save()
+                        stats['linked_targets'] += 1
+                except Target.DoesNotExist:
+                    continue
+                except Exception:
+                    continue
+        
+        return stats
+
+    def cleanup_existing_data(self, date_str, confirm=False):
+        """Remove all existing data for the specified date."""
+        try:
+            target_date = date.fromisoformat(date_str)
+            
+            # Get or create night
+            try:
+                night = Night.objects.get(date=target_date)
+            except Night.DoesNotExist:
+                return True  # Nothing to clean up
+            
+            # Count existing data
+            total_count = (
+                ScienceFrame.objects.filter(night=night).count() +
+                BiasFrame.objects.filter(night=night).count() +
+                DarkFrame.objects.filter(night=night).count() +
+                FlatFrame.objects.filter(night=night).count()
+            )
+            
+            if total_count == 0:
+                return True  # Nothing to clean up
+            
+            if not confirm:
+                self.stdout.write(f"⚠️ Found {total_count:,} existing frames for {date_str}")
+                response = input("Do you want to delete them? (type 'YES' to confirm): ")
+                if response != 'YES':
+                    return False
+            
+            # Delete frames
+            with transaction.atomic():
+                ScienceFrame.objects.filter(night=night).delete()
+                BiasFrame.objects.filter(night=night).delete()
+                DarkFrame.objects.filter(night=night).delete()
+                FlatFrame.objects.filter(night=night).delete()
+                
+                # Reset night statistics
+                night.science_count = 0
+                night.bias_count = 0
+                night.dark_count = 0
+                night.flat_count = 0
+                night.distinct_tiles = 0
+                night.total_exptime = 0
+                night.save()
+            
+            if self.options['debug']:
+                self.stdout.write(f"✅ Cleaned up {total_count:,} frames for {date_str}")
+            
+            return True
+            
+        except Exception as e:
+            self.stdout.write(f"❌ Cleanup failed: {e}")
+            return False
+
+    def print_progress_report(self, current, total):
+        """Print progress report."""
+        elapsed = time.time() - self.start_time
+        progress = current / total
+        eta = elapsed / progress - elapsed if progress > 0 else 0
+        
+        self.stdout.write("\n📊 PROGRESS REPORT")
+        self.stdout.write("─" * 30)
+        self.stdout.write(f"🌙 Nights processed: {current}/{total} ({progress*100:.1f}%)")
+        self.stdout.write(f"✅ Successful: {self.total_nights_processed}")
+        self.stdout.write(f"❌ Failed: {self.total_nights_failed}")
+        self.stdout.write(f"⏱️  Elapsed time: {elapsed:.0f}s")
+        self.stdout.write(f"⏱️  ETA: {eta:.0f}s")
+        
+        if self.total_files_processed > 0:
+            self.stdout.write(f"📁 Files processed: {self.total_files_processed:,}")
+            self.stdout.write(f"📊 Frames imported: {self.total_frames_imported:,}")
+            rate = self.total_files_processed / elapsed
+            self.stdout.write(f"🚀 Overall rate: {rate:.1f} files/second")
+
+    def print_final_summary(self):
+        """Print final processing summary."""
+        total_time = time.time() - self.start_time
+        
+        self.stdout.write("\n" + "=" * 100)
+        self.stdout.write(self.style.SUCCESS("🎉 SEQUENTIAL PROCESSING COMPLETED"))
+        self.stdout.write("=" * 100)
+        
+        self.stdout.write(f"⏱️  Total processing time: {total_time:.2f} seconds ({total_time/60:.1f} minutes)")
+        self.stdout.write(f"🌙 Total nights processed: {self.total_nights_processed}")
+        self.stdout.write(f"❌ Nights failed: {self.total_nights_failed}")
+        
+        if self.total_files_processed > 0:
+            self.stdout.write(f"📁 Total files processed: {self.total_files_processed:,}")
+            self.stdout.write(f"📊 Total frames imported: {self.total_frames_imported:,}")
+            self.stdout.write(f"🚀 Overall processing rate: {self.total_files_processed/total_time:.1f} files/second")
+        
+        # Success rate
+        if self.total_nights_processed + self.total_nights_failed > 0:
+            success_rate = self.total_nights_processed / (self.total_nights_processed + self.total_nights_failed) * 100
+            self.stdout.write(f"📈 Success rate: {success_rate:.1f}%")
+        
+        # Show failed nights if any
+        failed_nights = [log for log in self.processing_log if log['status'] == 'failed']
+        if failed_nights:
+            self.stdout.write("\n❌ Failed nights:")
+            for log in failed_nights:
+                self.stdout.write(f"  • {log['date']}: {log['error']}")
+        
+        self.stdout.write("=" * 100)
+
